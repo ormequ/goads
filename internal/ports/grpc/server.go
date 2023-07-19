@@ -3,7 +3,9 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"goads/internal/app"
+	"goads/internal/app/ad"
+	"goads/internal/app/user"
+	"goads/internal/ports/grpc/services"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -38,9 +40,10 @@ func (s *Server) Listen(ctx context.Context) error {
 	}
 }
 
-func NewServer(port string, a app.Ads, u app.Users) Server {
+func NewServer(port string, a ad.App, u user.App) Server {
 	s := grpc.NewServer(GetUnaryInterceptors())
-	RegisterAdServiceServer(s, NewService(a, u))
+	services.RegisterUserServiceServer(s, services.NewUsers(u))
+	services.RegisterAdServiceServer(s, services.NewAds(a))
 	return Server{port, s}
 }
 

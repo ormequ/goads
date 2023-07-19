@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -11,7 +12,7 @@ func TestCreateUser(t *testing.T) {
 	client := getTestClient()
 
 	user, err := client.createUser("test@test.com", "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Zero(t, user.Data.ID)
 	assert.Equal(t, "test@test.com", user.Data.Email)
 	assert.Equal(t, "test", user.Data.Name)
@@ -140,32 +141,32 @@ func TestSearch(t *testing.T) {
 	client := getTestClient()
 
 	user, err := client.createUser("test@test.com", "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ad, err := client.createAd(user.Data.ID, " hello", "world")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = client.createAd(user.Data.ID, "hello", "world")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = client.createAd(user.Data.ID, "hello world", "world")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = client.createAd(user.Data.ID, "hello world ", "world")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	l1, err := client.searchAds("hello")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, l1.Data, 3)
 
 	// + is URL decoded space
 	l2, err := client.searchAds("+hello")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, l2.Data, 1)
 	assert.Equal(t, ad.Data, l2.Data[0])
 
 	l3, err := client.searchAds("hello+world")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, l3.Data, 2)
 }
 

@@ -17,13 +17,8 @@ func (u User) String() string {
 	)
 }
 
-func (u User) GetID() int64 {
-	return u.ID
-}
-
-func New(id int64, email string, name string) User {
+func New(email string, name string) User {
 	return User{
-		ID:    id,
 		Email: email,
 		Name:  name,
 	}

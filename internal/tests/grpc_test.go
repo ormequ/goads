@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"goads/internal/adapters/maprepo"
-	"goads/internal/app/providers"
-	"goads/internal/entities/ads"
-	"goads/internal/entities/users"
+	ads2 "goads/internal/app/ad"
+	users2 "goads/internal/app/user"
 	grpcPort "goads/internal/ports/grpc"
+	"goads/internal/ports/grpc/services"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func getTestGRPCClient(t *testing.T) (grpcPort.AdServiceClient, context.Context) {
+func getTestGRPCClient(t *testing.T) (services.AdServiceClient, services.UserServiceClient, context.Context) {
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {
 		_ = lis.Close()
@@ -29,10 +29,10 @@ func getTestGRPCClient(t *testing.T) (grpcPort.AdServiceClient, context.Context)
 		srv.Stop()
 	})
 
-	u := providers.NewUsers(maprepo.New[users.User]())
-	a := providers.NewAds(maprepo.New[ads.Ad](), u)
-	svc := grpcPort.NewService(a, u)
-	grpcPort.RegisterAdServiceServer(srv, svc)
+	u := users2.New(maprepo.NewUsers())
+	a := ads2.New(maprepo.NewAds(), u)
+	services.RegisterUserServiceServer(srv, services.NewUsers(u))
+	services.RegisterAdServiceServer(srv, services.NewAds(a))
 
 	go func() {
 		assert.NoError(t, srv.Serve(lis), "srv.Serve")
@@ -53,12 +53,12 @@ func getTestGRPCClient(t *testing.T) (grpcPort.AdServiceClient, context.Context)
 	t.Cleanup(func() {
 		_ = conn.Close()
 	})
-	return grpcPort.NewAdServiceClient(conn), ctx
+	return services.NewAdServiceClient(conn), services.NewUserServiceClient(conn), ctx
 }
 
-func TestGRRPCCreateUser(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@test.com"})
+func TestGRRPCCreate(t *testing.T) {
+	_, client, ctx := getTestGRPCClient(t)
+	res, err := client.Create(ctx, &services.CreateUserRequest{Name: "Oleg", Email: "test@test.com"})
 	assert.NoError(t, err)
 	assert.Equal(t, "Oleg", res.Name)
 	assert.Equal(t, "test@test.com", res.Email)
@@ -66,25 +66,25 @@ func TestGRRPCCreateUser(t *testing.T) {
 }
 
 func TestGRPCUpdateUser(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	_, client, ctx := getTestGRPCClient(t)
+	user, err := client.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	user, err = client.ChangeUserEmail(ctx, &grpcPort.ChangeUserEmailRequest{Id: user.Id, Email: "asdf@asdf.com"})
+	user, err = client.ChangeEmail(ctx, &services.ChangeUserEmailRequest{Id: user.Id, Email: "asdf@asdf.com"})
 	assert.NoError(t, err)
 	assert.Equal(t, "asdf@asdf.com", user.Email)
 
-	user, err = client.ChangeUserName(ctx, &grpcPort.ChangeUserNameRequest{Id: user.Id, Name: "asdf"})
+	user, err = client.ChangeName(ctx, &services.ChangeUserNameRequest{Id: user.Id, Name: "asdf"})
 	assert.NoError(t, err)
 	assert.Equal(t, "asdf", user.Name)
 }
 
-func TestGRPCCreateAd(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+func TestGRPCCreate(t *testing.T) {
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 	assert.Zero(t, ad.Id)
 	assert.Equal(t, "hello", ad.Title)
@@ -96,28 +96,28 @@ func TestGRPCCreateAd(t *testing.T) {
 }
 
 func TestGRPCCreateAdWithoutUser(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	_, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: 123, Title: "hello", Text: "world"})
+	client, _, ctx := getTestGRPCClient(t)
+	_, err := client.Create(ctx, &services.CreateAdRequest{UserId: 123, Title: "hello", Text: "world"})
 	code := status.Code(err)
 	assert.Equal(t, codes.NotFound, code)
 }
 
 func TestGRPCIncorrectGet(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	_, err := client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 123})
+	_, client, ctx := getTestGRPCClient(t)
+	_, err := client.GetByID(ctx, &services.GetUserByIDRequest{Id: 123})
 	code := status.Code(err)
 	assert.Equal(t, codes.NotFound, code)
 }
 
 func TestGRPCChangeAdStatus(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 	time.Sleep(5 * time.Millisecond)
-	ad, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{UserId: user.Id, AdId: ad.Id, Published: true})
+	ad, err = clientAd.ChangeStatus(ctx, &services.ChangeAdStatusRequest{UserId: user.Id, AdId: ad.Id, Published: true})
 	assert.NoError(t, err)
 	assert.True(t, ad.Published)
 	assert.WithinDuration(t, time.Now().UTC(), time.UnixMilli(ad.UpdateDate), time.Millisecond*2)
@@ -125,34 +125,34 @@ func TestGRPCChangeAdStatus(t *testing.T) {
 }
 
 func TestGRPCUpdateAd(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 
-	ad, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{UserId: user.Id, AdId: ad.Id, Title: "привет", Text: "мир"})
+	ad, err = clientAd.Update(ctx, &services.UpdateAdRequest{UserId: user.Id, AdId: ad.Id, Title: "привет", Text: "мир"})
 	assert.NoError(t, err)
 	assert.Equal(t, "привет", ad.Title)
 	assert.Equal(t, "мир", ad.Text)
 }
 
 func TestGRPCListAds(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 
-	ad, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{UserId: user.Id, AdId: ad.Id, Published: true})
+	ad, err = clientAd.ChangeStatus(ctx, &services.ChangeAdStatusRequest{UserId: user.Id, AdId: ad.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "best cat", Text: "not for sale"})
+	_, err = clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "best cat", Text: "not for sale"})
 	assert.NoError(t, err)
 
-	adsResp, err := client.ListAds(ctx, &grpcPort.FilterAdsRequest{AuthorId: -1})
+	adsResp, err := clientAd.List(ctx, &services.FilterAdsRequest{AuthorId: -1})
 	listAds := adsResp.List
 	assert.NoError(t, err)
 	assert.Len(t, listAds, 1)
@@ -164,65 +164,65 @@ func TestGRPCListAds(t *testing.T) {
 }
 
 func TestGRPCSearch(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: " hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: " hello", Text: "world"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	_, err = clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello world", Text: "world"})
+	_, err = clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello world", Text: "world"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello world ", Text: "world"})
+	_, err = clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello world ", Text: "world"})
 	assert.NoError(t, err)
 
-	l1, err := client.SearchAds(ctx, &grpcPort.SearchAdsRequest{Title: "hello"})
+	l1, err := clientAd.Search(ctx, &services.SearchAdsRequest{Title: "hello"})
 	assert.NoError(t, err)
 	assert.Len(t, l1.List, 3)
 
-	l2, err := client.SearchAds(ctx, &grpcPort.SearchAdsRequest{Title: " hello"})
+	l2, err := clientAd.Search(ctx, &services.SearchAdsRequest{Title: " hello"})
 	assert.NoError(t, err)
 	assert.Len(t, l2.List, 1)
 	assert.Equal(t, ad.Id, l2.List[0].Id)
 
-	l3, err := client.SearchAds(ctx, &grpcPort.SearchAdsRequest{Title: "hello world"})
+	l3, err := clientAd.Search(ctx, &services.SearchAdsRequest{Title: "hello world"})
 	assert.NoError(t, err)
 	assert.Len(t, l3.List, 2)
 }
 
 func TestGRPCDeleteAd(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	clientAd, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
+	ad, err := clientAd.Create(ctx, &services.CreateAdRequest{UserId: user.Id, Title: "hello", Text: "world"})
 	assert.NoError(t, err)
 
-	adsList, err := client.SearchAds(ctx, &grpcPort.SearchAdsRequest{Title: "hello"})
+	adsList, err := clientAd.Search(ctx, &services.SearchAdsRequest{Title: "hello"})
 	assert.NoError(t, err)
 	assert.Len(t, adsList.List, 1)
 
-	_, err = client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AuthorId: user.Id, AdId: ad.Id})
+	_, err = clientAd.Delete(ctx, &services.DeleteAdRequest{AuthorId: user.Id, AdId: ad.Id})
 	assert.NoError(t, err)
 
-	adsList, err = client.SearchAds(ctx, &grpcPort.SearchAdsRequest{Title: "hello"})
+	adsList, err = clientAd.Search(ctx, &services.SearchAdsRequest{Title: "hello"})
 	assert.NoError(t, err)
 	assert.Len(t, adsList.List, 0)
 }
 
 func TestGRPCDeleteUser(t *testing.T) {
-	client, ctx := getTestGRPCClient(t)
-	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "test", Email: "test@test.com"})
+	_, clientUser, ctx := getTestGRPCClient(t)
+	user, err := clientUser.Create(ctx, &services.CreateUserRequest{Name: "test", Email: "test@test.com"})
 	assert.NoError(t, err)
 
-	_, err = client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: user.Id})
+	_, err = clientUser.Delete(ctx, &services.DeleteUserRequest{Id: user.Id})
 	assert.NoError(t, err)
 
-	_, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: user.Id})
+	_, err = clientUser.GetByID(ctx, &services.GetUserByIDRequest{Id: user.Id})
 	code := status.Code(err)
 	assert.Equal(t, codes.NotFound, code)
 }

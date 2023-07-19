@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"goads/internal/adapters/maprepo"
-	"goads/internal/app/providers"
-	"goads/internal/entities/ads"
-	"goads/internal/entities/users"
+	ads2 "goads/internal/app/ad"
+	users2 "goads/internal/app/user"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -56,8 +55,8 @@ type testClient struct {
 }
 
 func getTestClient() *testClient {
-	u := providers.NewUsers(maprepo.New[users.User]())
-	a := providers.NewAds(maprepo.New[ads.Ad](), u)
+	u := users2.New(maprepo.NewUsers())
+	a := ads2.New(maprepo.NewAds(), u)
 	server := httpgin.NewServer(":18080", a, u)
 	testServer := httptest.NewServer(server.Handler)
 
@@ -138,7 +137,7 @@ func (tc *testClient) createUser(email string, name string) (userResponse, error
 		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/users", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/users/create", bytes.NewReader(data))
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

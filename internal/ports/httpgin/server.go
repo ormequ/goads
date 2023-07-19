@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goads/internal/app/ad"
+	"goads/internal/app/user"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"goads/internal/app"
 )
 
 type Server struct {
 	http.Server
 }
 
-func NewServer(port string, a app.Ads, u app.Users) *Server {
+func NewServer(port string, a ad.App, u user.App) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(LoggerMW)

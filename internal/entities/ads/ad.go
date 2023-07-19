@@ -27,13 +27,16 @@ func (a Ad) String() string {
 	)
 }
 
-func (a Ad) GetID() int64 {
-	return a.ID
+func (a Ad) GetCreateDate() time.Time {
+	return a.CreateDate.Truncate(24 * time.Hour)
 }
 
-func New(id int64, title string, text string, authorID int64) Ad {
+func (a Ad) GetUpdateDate() time.Time {
+	return a.UpdateDate.Truncate(24 * time.Hour)
+}
+
+func New(title string, text string, authorID int64) Ad {
 	return Ad{
-		ID:         id,
 		AuthorID:   authorID,
 		Title:      title,
 		Text:       text,

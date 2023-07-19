@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"goads/internal/adapters/maprepo"
-	"goads/internal/app/providers"
-	"goads/internal/entities/ads"
-	"goads/internal/entities/users"
+	"goads/internal/app/ad"
+	"goads/internal/app/user"
+	"goads/internal/config"
 	"goads/internal/ports/grpc"
 	"goads/internal/ports/httpgin"
 	"golang.org/x/sync/errgroup"
@@ -14,10 +14,19 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func main() {
+	cfg := config.MustLoad()
 	eg, ctx := errgroup.WithContext(context.Background())
+
+	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = conn.Close(ctx) }()
 
 	sigQuit := make(chan os.Signal, 1)
 	signal.Ignore(syscall.SIGHUP, syscall.SIGPIPE)
@@ -32,13 +41,10 @@ func main() {
 		}
 	})
 
-	httpPort := ":18080"
-	grpcPort := ":18081"
-
-	usersProv := providers.NewUsers(maprepo.New[users.User]())
-	adsProv := providers.NewAds(maprepo.New[ads.Ad](), usersProv)
-	httpServer := httpgin.NewServer(httpPort, adsProv, usersProv)
-	grpcServer := grpc.NewServer(grpcPort, adsProv, usersProv)
+	usersProv := user.New(maprepo.NewUsers())
+	adsProv := ad.New(maprepo.NewAds(), usersProv)
+	httpServer := httpgin.NewServer(cfg.HTTPAddress, adsProv, usersProv)
+	grpcServer := grpc.NewServer(cfg.GRPCAddress, adsProv, usersProv)
 
 	eg.Go(func() error {
 		return httpServer.Listen(ctx)

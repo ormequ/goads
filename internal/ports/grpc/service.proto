@@ -1,21 +1,16 @@
 syntax = "proto3";
 
 package ad;
-option go_package = "lesson9/homework/internal/ports/grpc";
+option go_package = "./services";
 import "google/protobuf/empty.proto";
 
 service AdService {
-  rpc CreateAd(CreateAdRequest) returns (AdResponse) {}
-  rpc ChangeAdStatus(ChangeAdStatusRequest) returns (AdResponse) {}
-  rpc UpdateAd(UpdateAdRequest) returns (AdResponse) {}
-  rpc ListAds(FilterAdsRequest) returns (ListAdResponse) {}
-  rpc SearchAds(SearchAdsRequest) returns (ListAdResponse) {}
-  rpc CreateUser(CreateUserRequest) returns (UserResponse) {}
-  rpc ChangeUserName(ChangeUserNameRequest) returns (UserResponse) {}
-  rpc ChangeUserEmail(ChangeUserEmailRequest) returns (UserResponse) {}
-  rpc GetUser(GetUserRequest) returns (UserResponse) {}
-  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty) {}
-  rpc DeleteAd(DeleteAdRequest) returns (google.protobuf.Empty) {}
+  rpc Create(CreateAdRequest) returns (AdResponse) {}
+  rpc ChangeStatus(ChangeAdStatusRequest) returns (AdResponse) {}
+  rpc Update(UpdateAdRequest) returns (AdResponse) {}
+  rpc List(FilterAdsRequest) returns (ListAdResponse) {}
+  rpc Search(SearchAdsRequest) returns (ListAdResponse) {}
+  rpc Delete(DeleteAdRequest) returns (google.protobuf.Empty) {}
 }
 
 message CreateAdRequest {
@@ -61,6 +56,21 @@ message ListAdResponse {
   repeated AdResponse list = 1;
 }
 
+message DeleteAdRequest {
+  int64 ad_id = 1;
+  int64 author_id = 2;
+}
+
+
+service UserService {
+  rpc Create(CreateUserRequest) returns (UserResponse) {}
+  rpc ChangeName(ChangeUserNameRequest) returns (UserResponse) {}
+  rpc ChangeEmail(ChangeUserEmailRequest) returns (UserResponse) {}
+  rpc GetByID(GetUserByIDRequest) returns (UserResponse) {}
+  rpc GetByEmail(GetUserByEmailRequest) returns (UserResponse) {}
+  rpc Delete(DeleteUserRequest) returns (google.protobuf.Empty) {}
+}
+
 message CreateUserRequest {
   string name = 1;
   string email = 2;
@@ -82,15 +92,14 @@ message UserResponse {
   string email = 3;
 }
 
-message GetUserRequest {
+message GetUserByIDRequest {
   int64 id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
 }
 
 message DeleteUserRequest {
   int64 id = 1;
-}
-
-message DeleteAdRequest {
-  int64 ad_id = 1;
-  int64 author_id = 2;
 }
