@@ -17,13 +17,13 @@ type Server struct {
 	http.Server
 }
 
-func NewServer(port string, a ad.App, u user.App) *Server {
+func NewServer(addr string, a ad.App, u user.App) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(LoggerMW)
 	r.Use(RecoveryMW)
 	s := Server{http.Server{
-		Addr:    port,
+		Addr:    addr,
 		Handler: r,
 	}}
 	api := r.Group("/api/v1")

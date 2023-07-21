@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"goads/internal/adapters/maprepo"
 	"goads/internal/app/ad"
 	"goads/internal/app/user"
@@ -14,15 +15,19 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/jackc/pgx/v5"
 )
 
 func main() {
 	cfg := config.MustLoad()
 	eg, ctx := errgroup.WithContext(context.Background())
 
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
+	conn, err := pgx.Connect(
+		ctx,
+		fmt.Sprintf(
+			"postgres://%s:%s@%s:%d/%s", cfg.PostgresUser,
+			cfg.PostgresPassword, cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresDB,
+		),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

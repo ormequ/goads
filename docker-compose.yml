@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  postgres:
+    restart: always
+    image: postgres:14
+    environment:
+      POSTGRES_DB: "goads"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "root"
+    networks:
+      - default
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+      # todo add storing data volume
+  ads:
+    restart: always
+    build: .
+    depends_on:
+      - postgres
+    ports:
+      - "18080:18080"
+      - "18081:18081"
+    networks:
+      - default
+    env_file:
+      - config/config.env
+    environment:
+      CONFIG_PATH: ""
+
+networks:
+  default:
