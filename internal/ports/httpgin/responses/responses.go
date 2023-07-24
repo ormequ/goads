@@ -74,10 +74,3 @@ func EmptySuccess() gin.H {
 		"error": nil,
 	}
 }
-
-func Error(err error) gin.H {
-	return gin.H{
-		"data":  nil,
-		"error": err.Error(),
-	}
-}

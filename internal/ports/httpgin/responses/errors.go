@@ -2,6 +2,7 @@ package responses
 
 import (
 	"errors"
+	"github.com/gin-gonic/gin"
 	"goads/internal/app"
 	"net/http"
 )
@@ -17,4 +18,14 @@ func GetErrorHTTPStatus(err error) int {
 		return http.StatusBadRequest
 	}
 	return http.StatusInternalServerError
+}
+
+func Error(err error) gin.H {
+	if GetErrorHTTPStatus(err) == http.StatusInternalServerError {
+		err = errors.New("internal server error")
+	}
+	return gin.H{
+		"data":  nil,
+		"error": err.Error(),
+	}
 }
