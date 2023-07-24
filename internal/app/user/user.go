@@ -34,13 +34,9 @@ func (u App) Create(ctx context.Context, email string, name string) (users.User,
 	user.ID, err = u.repository.Store(ctx, user)
 	if err != nil {
 		return user, app.Error{
-			Err:  err,
-			Type: "user",
-			Details: fmt.Sprintf(
-				"email: %s, name: %s",
-				email,
-				name,
-			),
+			Err:     err,
+			Type:    "user",
+			Details: fmt.Sprintf("email: %s, name: %s", email, name),
 		}
 	}
 	return user, nil

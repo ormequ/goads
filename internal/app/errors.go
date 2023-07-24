@@ -1,16 +1,16 @@
 package app
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 )
 
 var (
 	ErrPermissionDenied = errors.New("this user cannot edit the ad")
 	ErrNotFound         = errors.New("not found")
-	ErrInvalidContent   = errors.New("invalid ad content")
-	ErrInvalidFilter    = errors.New("invalid ads filter")
-	ErrAlreadyExists    = errors.New("ad is already exist")
+	ErrInvalidContent   = errors.New("invalid ad's content")
+	ErrInvalidFilter    = errors.New("invalid ad's filter")
+	ErrAlreadyExists    = errors.New("object already exists")
 )
 
 // Error is wrapped error (Err) with information: ID to check in what object of Type an error has happened

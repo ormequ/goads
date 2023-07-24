@@ -54,14 +54,9 @@ func (a App) Create(ctx context.Context, title string, text string, authorID int
 	ad.ID, err = a.repository.Store(ctx, ad)
 	if err != nil {
 		return ad, app.Error{
-			Err:  err,
-			Type: "ad",
-			Details: fmt.Sprintf(
-				"title: %s, text: %s, author: %d",
-				title,
-				text,
-				authorID,
-			),
+			Err:     err,
+			Type:    "ad",
+			Details: fmt.Sprintf("title: %s, text: %s, author: %d", title, text, authorID),
 		}
 	}
 	return ad, nil
@@ -94,14 +89,10 @@ func (a App) getEditable(ctx context.Context, id int64, userID int64) (ads.Ad, e
 	}
 	if ad.AuthorID != userID {
 		return ads.Ad{}, app.Error{
-			Err:  app.ErrPermissionDenied,
-			Type: "ad",
-			ID:   ad.ID,
-			Details: fmt.Sprintf(
-				"ad created by %d and cannot be changed by %d",
-				ad.AuthorID,
-				userID,
-			),
+			Err:     app.ErrPermissionDenied,
+			Type:    "ad",
+			ID:      ad.ID,
+			Details: fmt.Sprintf("ad created by %d and cannot be changed by %d", ad.AuthorID, userID),
 		}
 	}
 	return ad, nil
