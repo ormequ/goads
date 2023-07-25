@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package auth;
+option go_package = "goads/internal/auth/proto";
+import "google/protobuf/empty.proto";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc Authenticate(AuthenticateRequest) returns (TokenResponse) {}
+  rpc ChangeName(ChangeUserNameRequest) returns (UserInfoResponse) {}
+  rpc ChangeEmail(ChangeUserEmailRequest) returns (UserInfoResponse) {}
+  rpc ChangePassword(ChangeUserPasswordRequest) returns (UserInfoResponse) {}
+  rpc GetByID(GetUserByIDRequest) returns (UserInfoResponse) {}
+  rpc Delete(DeleteUserRequest) returns (google.protobuf.Empty) {}
+}
+
+message RegisterRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  UserInfoResponse user = 1;
+  TokenResponse token = 2;
+}
+
+message AuthenticateRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message TokenResponse {
+  string token = 1;
+}
+
+message ChangeUserNameRequest {
+  string name = 1;
+  string token = 2;
+}
+
+message ChangeUserEmailRequest {
+  string email = 1;
+  string token = 2;
+}
+
+message ChangeUserPasswordRequest {
+  string password = 1;
+  string token = 2;
+}
+
+message UserInfoResponse {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message GetUserByIDRequest {
+  int64 id = 1;
+}
+
+message DeleteUserRequest {
+  string token = 2;
+}

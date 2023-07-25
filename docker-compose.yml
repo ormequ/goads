@@ -2,21 +2,35 @@ version: "3"
 
 services:
   postgres:
-    restart: always
     image: postgres:14
     environment:
       POSTGRES_DB: "goads"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "root"
+    ports:
+      - "5433:5432"
+    networks:
+      - default
+      # todo add storing data volume
+  migrate:
+    image: migrate/migrate
+    links:
+      - postgres
+    depends_on:
+      - postgres
     networks:
       - default
     volumes:
-      - ./migrations:/docker-entrypoint-initdb.d
-      # todo add storing data volume
+      - ./migrations:/migrations
+    command: ["-path", "./migrations", "-database", "postgres://postgres:root@postgres:5432/goads?sslmode=disable", "up"]
   ads:
-    restart: always
-    build: .
+    build:
+      dockerfile: docker/ads/Dockerfile
+      context: .
     depends_on:
+      - postgres
+      - migrate
+    links:
       - postgres
     ports:
       - "18080:18080"
@@ -24,7 +38,25 @@ services:
     networks:
       - default
     env_file:
-      - config/config.env
+      - config/ads.env
+    environment:
+      CONFIG_PATH: ""
+  auth:
+    build:
+      dockerfile: docker/auth/Dockerfile
+      context: .
+    depends_on:
+      - postgres
+      - migrate
+    links:
+      - postgres
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    networks:
+      - default
+    env_file:
+      - config/auth.env
     environment:
       CONFIG_PATH: ""
 
