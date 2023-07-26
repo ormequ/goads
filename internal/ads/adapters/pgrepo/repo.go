@@ -16,15 +16,17 @@ type Ads struct {
 }
 
 func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
+	const query = `INSERT INTO ads (author_id, published, title, text, create_date, update_date) 	
+			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+
 	var id int64 = -1
 	if ctx.Err() != nil {
 		return id, ctx.Err()
 	}
 	err := r.db.QueryRow(
-		ctx,
-		`INSERT INTO ads (author_id, published, title, text, create_date, update_date) 	
-			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		ad.AuthorID, ad.Published, ad.Title, ad.Text, ad.GetCreateDate(), ad.GetUpdateDate(),
+		ctx, query,
+		ad.AuthorID, ad.Published, ad.Title,
+		ad.Text, ad.GetCreateDate(), ad.GetUpdateDate(),
 	).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -38,11 +40,13 @@ func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 }
 
 func (r Ads) GetByID(ctx context.Context, id int64) (ads.Ad, error) {
+	const query = `SELECT id, author_id, published, title, text, create_date, update_date FROM ads WHERE id=$1`
+
 	if ctx.Err() != nil {
 		return ads.Ad{}, ctx.Err()
 	}
 	var ad ads.Ad
-	err := r.db.QueryRow(ctx, `SELECT id, author_id, published, title, text, create_date, update_date FROM ads WHERE id=$1`, id).
+	err := r.db.QueryRow(ctx, query, id).
 		Scan(&ad.ID, &ad.AuthorID, &ad.Published, &ad.Title, &ad.Text, &ad.CreateDate, &ad.UpdateDate)
 	if err == pgx.ErrNoRows {
 		err = errors.Join(app.ErrNotFound)
@@ -51,11 +55,13 @@ func (r Ads) GetByID(ctx context.Context, id int64) (ads.Ad, error) {
 }
 
 func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, error) {
+	// query forms dynamically
+	query := "SELECT id, author_id, published, title, text, create_date, update_date FROM ads"
+
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
-	query := "SELECT id, author_id, published, title, text, create_date, update_date FROM ads"
 	where := false
 	if !filter.All {
 		query += " WHERE published=true"
@@ -107,11 +113,13 @@ func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, erro
 }
 
 func (r Ads) Update(ctx context.Context, ad ads.Ad) error {
+	const query = `UPDATE ads SET author_id=$1, published=$2, title=$3, text=$4, create_date=$5, update_date=$6 WHERE id=$7`
+
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 	_, err := r.db.Exec(
-		ctx, `UPDATE ads SET author_id=$1, published=$2, title=$3, text=$4, create_date=$5, update_date=$6 WHERE id=$7`,
+		ctx, query,
 		ad.AuthorID, ad.Published, ad.Title, ad.Text, ad.GetCreateDate(), ad.GetUpdateDate(), ad.ID,
 	)
 	if err == pgx.ErrNoRows {
@@ -121,10 +129,12 @@ func (r Ads) Update(ctx context.Context, ad ads.Ad) error {
 }
 
 func (r Ads) Delete(ctx context.Context, id int64) error {
+	const query = `DELETE FROM ads WHERE id=$1`
+
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	_, err := r.db.Exec(ctx, `DELETE FROM ads WHERE id=$1`, id)
+	_, err := r.db.Exec(ctx, query, id)
 	if err == pgx.ErrNoRows {
 		err = errors.Join(app.ErrNotFound)
 	}
