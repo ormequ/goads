@@ -7,9 +7,9 @@ import (
 	"goads/internal/auth/adapters/jwt"
 	"goads/internal/auth/adapters/pgrepo"
 	"goads/internal/auth/app"
-	"goads/internal/auth/config"
 	"goads/internal/auth/ports/grpc"
 	"goads/internal/auth/ports/httpgin"
+	"goads/internal/pkg/config"
 	"goads/internal/pkg/shutdown"
 	"golang.org/x/sync/errgroup"
 	"log"
@@ -18,6 +18,21 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
+
+type Config struct {
+	Env          string `env:"ENV" env-default:"local"`
+	PrivateKey   string `env:"AUTH_PRIVATE_KEY" env-required:"true"`
+	PublicKey    string `env:"AUTH_PUBLIC_KEY" env-required:"true"`
+	Expires      int    `env:"AUTH_EXPIRES_HOURS" env-default:"24"`
+	PasswordCost int    `env:"PASSWORD_COST" env-default:"10"`
+	HTTPAddress  string `env:"HTTP_ADDRESS" env-default:":8080"`
+	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8081"`
+	DBHost       string `env:"POSTGRES_HOST" env-required:"true"`
+	DBPort       uint16 `env:"POSTGRES_PORT" env-required:"true"`
+	DBUser       string `env:"POSTGRES_USER" env-required:"true"`
+	DBPassword   string `env:"POSTGRES_PASSWORD" env-required:"true"`
+	DBName       string `env:"POSTGRES_DB" env-required:"true"`
+}
 
 func mustReadFile(file string) []byte {
 	b, err := os.ReadFile(file)
@@ -28,7 +43,7 @@ func mustReadFile(file string) []byte {
 }
 
 func main() {
-	cfg := config.MustLoad()
+	cfg := config.MustLoadENV[Config](os.Getenv("CONFIG_PATH"))
 	tokenizer, err := jwt.NewTokenizer(time.Duration(cfg.Expires)*time.Hour, mustReadFile(cfg.PrivateKey))
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +66,7 @@ func main() {
 	httpServer := httpgin.NewServer(cfg.HTTPAddress, a)
 	grpcServer := grpc.NewServer(cfg.GRPCAddress, a)
 
-	shutdown.SetupGraceful(eg, ctx, httpServer, grpcServer)
+	shutdown.Gracefully(eg, ctx, httpServer, grpcServer)
 
 	if err := eg.Wait(); err != nil {
 		log.Println("Graceful shutdown server:", err)
