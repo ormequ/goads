@@ -13,8 +13,7 @@ type Server interface {
 	Listen(ctx context.Context) error
 }
 
-func SetupGraceful(eg *errgroup.Group, ctx context.Context, servers ...Server) {
-
+func Gracefully(eg *errgroup.Group, ctx context.Context, servers ...Server) {
 	sigQuit := make(chan os.Signal, 1)
 	signal.Ignore(syscall.SIGHUP, syscall.SIGPIPE)
 	signal.Notify(sigQuit, syscall.SIGINT, syscall.SIGTERM)
