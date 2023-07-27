@@ -59,6 +59,23 @@ services:
       - config/auth.env
     environment:
       CONFIG_PATH: ""
+  url_shortener:
+    build:
+      dockerfile: docker/urlshortener/Dockerfile
+      context: .
+    depends_on:
+      - postgres
+      - migrate
+    links:
+      - postgres
+    ports:
+      - "8888:8888"
+    networks:
+      - default
+    env_file:
+      - config/urlshortener.env
+    environment:
+      CONFIG_PATH: ""
 
 networks:
   default:
