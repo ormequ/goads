@@ -13,6 +13,10 @@ type Repo struct {
 	db *pgx.Conn
 }
 
+const (
+	constrEmail = "users_email_key"
+)
+
 func (r Repo) Store(ctx context.Context, user users.User) (int64, error) {
 	const query = `INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id`
 
@@ -21,7 +25,7 @@ func (r Repo) Store(ctx context.Context, user users.User) (int64, error) {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			if pgErr.ConstraintName == "users_email_key" {
+			if pgErr.ConstraintName == constrEmail {
 				err = errors.Join(err, app.ErrEmailAlreadyExists)
 			}
 		}
@@ -43,9 +47,6 @@ func (r Repo) GetByEmail(ctx context.Context, email string) (users.User, error) 
 func (r Repo) GetByID(ctx context.Context, id int64) (users.User, error) {
 	const query = `SELECT id, email, name FROM users WHERE id=$1`
 
-	if ctx.Err() != nil {
-		return users.User{}, ctx.Err()
-	}
 	var user users.User
 	err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Email, &user.Name)
 	if err == pgx.ErrNoRows {
@@ -57,9 +58,6 @@ func (r Repo) GetByID(ctx context.Context, id int64) (users.User, error) {
 func (r Repo) Update(ctx context.Context, user users.User) error {
 	const query = `UPDATE users SET email=$1, name=$2, password=$3 WHERE id=$4`
 
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	_, err := r.db.Exec(ctx, query, user.Email, user.Name, user.Password, user.ID)
 	if err == pgx.ErrNoRows {
 		err = errors.Join(app.ErrNotFound)
@@ -70,9 +68,6 @@ func (r Repo) Update(ctx context.Context, user users.User) error {
 func (r Repo) Delete(ctx context.Context, id int64) error {
 	const query = `DELETE FROM users WHERE id=$1`
 
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	_, err := r.db.Exec(ctx, query, id)
 	if err == pgx.ErrNoRows {
 		err = errors.Join(app.ErrNotFound)

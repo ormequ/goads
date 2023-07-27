@@ -15,14 +15,15 @@ type Ads struct {
 	db *pgx.Conn
 }
 
+const (
+	constrAuthorID = "ads_author_id_key"
+)
+
 func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 	const query = `INSERT INTO ads (author_id, published, title, text, create_date, update_date) 	
 			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
 	var id int64 = -1
-	if ctx.Err() != nil {
-		return id, ctx.Err()
-	}
 	err := r.db.QueryRow(
 		ctx, query,
 		ad.AuthorID, ad.Published, ad.Title,
@@ -31,7 +32,7 @@ func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			if pgErr.ConstraintName == "ads_author_id_key" {
+			if pgErr.ConstraintName == constrAuthorID {
 				err = errors.Join(err, app.ErrNotFound)
 			}
 		}
@@ -42,9 +43,6 @@ func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 func (r Ads) GetByID(ctx context.Context, id int64) (ads.Ad, error) {
 	const query = `SELECT id, author_id, published, title, text, create_date, update_date FROM ads WHERE id=$1`
 
-	if ctx.Err() != nil {
-		return ads.Ad{}, ctx.Err()
-	}
 	var ad ads.Ad
 	err := r.db.QueryRow(ctx, query, id).
 		Scan(&ad.ID, &ad.AuthorID, &ad.Published, &ad.Title, &ad.Text, &ad.CreateDate, &ad.UpdateDate)
@@ -57,10 +55,6 @@ func (r Ads) GetByID(ctx context.Context, id int64) (ads.Ad, error) {
 func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, error) {
 	// query forms dynamically
 	query := "SELECT id, author_id, published, title, text, create_date, update_date FROM ads"
-
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
 
 	where := false
 	if !filter.All {
@@ -115,9 +109,6 @@ func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, erro
 func (r Ads) Update(ctx context.Context, ad ads.Ad) error {
 	const query = `UPDATE ads SET author_id=$1, published=$2, title=$3, text=$4, create_date=$5, update_date=$6 WHERE id=$7`
 
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	_, err := r.db.Exec(
 		ctx, query,
 		ad.AuthorID, ad.Published, ad.Title, ad.Text, ad.GetCreateDate(), ad.GetUpdateDate(), ad.ID,
@@ -131,9 +122,6 @@ func (r Ads) Update(ctx context.Context, ad ads.Ad) error {
 func (r Ads) Delete(ctx context.Context, id int64) error {
 	const query = `DELETE FROM ads WHERE id=$1`
 
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	_, err := r.db.Exec(ctx, query, id)
 	if err == pgx.ErrNoRows {
 		err = errors.Join(app.ErrNotFound)
