@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"goads/internal/ads/app"
-	services2 "goads/internal/ads/ports/grpc/services"
 	"goads/internal/ads/proto"
 	"google.golang.org/grpc"
 	"net"
@@ -42,7 +41,7 @@ func (s Server) Listen(ctx context.Context) error {
 
 func NewServer(addr string, a app.App) Server {
 	s := grpc.NewServer(GetUnaryInterceptors())
-	proto.RegisterAdServiceServer(s, services2.NewAds(a))
+	proto.RegisterAdServiceServer(s, NewService(a))
 	return Server{addr, s}
 }
 
