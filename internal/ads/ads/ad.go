@@ -10,7 +10,7 @@ type Ad struct {
 	AuthorID   int64
 	Published  bool
 	Title      string `validate:"min:1; max:99"`
-	Text       string `validate:"min:1; max:499"`
+	Text       string `validate:"min:1"`
 	CreateDate time.Time
 	UpdateDate time.Time
 }
