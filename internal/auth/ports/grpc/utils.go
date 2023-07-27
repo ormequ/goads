@@ -3,11 +3,13 @@ package grpc
 import (
 	"errors"
 	"goads/internal/auth/app"
+	"goads/internal/auth/proto"
+	"goads/internal/auth/users"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func GetErrorStatus(err error) error {
+func getErrorStatus(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -25,4 +27,18 @@ func GetErrorStatus(err error) error {
 		code = codes.AlreadyExists
 	}
 	return status.Error(code, err.Error())
+}
+
+func userToInfoResponse(user users.User) *proto.UserInfoResponse {
+	return &proto.UserInfoResponse{
+		Id:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}
+}
+
+func tokenToResponse(token string) *proto.TokenResponse {
+	return &proto.TokenResponse{
+		Token: token,
+	}
 }
