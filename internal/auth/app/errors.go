@@ -8,4 +8,5 @@ var (
 	ErrInvalidContent       = errors.New("invalid content")
 	ErrEmailAlreadyExists   = errors.New("email already exists")
 	ErrInvalidToken         = errors.New("invalid token")
+	ErrPasswordToShort      = errors.New("password to short")
 )

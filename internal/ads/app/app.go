@@ -15,11 +15,12 @@ type Repository interface {
 	GetFiltered(ctx context.Context, filter Filter) ([]ads.Ad, error)
 	Update(ctx context.Context, ad ads.Ad) error
 	Delete(ctx context.Context, id int64) error
+	GetOnlyPublished(ctx context.Context, ids []int64) ([]ads.Ad, error)
 }
 type Filter struct {
 	AuthorID int64
 	Date     time.Time
-	Prefix   string
+	Title    string
 	All      bool
 }
 
@@ -85,11 +86,15 @@ func (a App) getEditable(ctx context.Context, id int64, userID int64) (ads.Ad, e
 }
 
 // change applies function changer for an ad and updates it in the repository
-func (a App) change(ctx context.Context, ad ads.Ad, changer func(ads.Ad) ads.Ad) error {
-	newAd := changer(ad)
-	err := validator.Validate(newAd)
+func (a App) change(ctx context.Context, id int64, authorID int64, changer func(ads.Ad) ads.Ad) (ads.Ad, error) {
+	ad, err := a.getEditable(ctx, id, authorID)
 	if err != nil {
-		return Error{
+		return ad, err
+	}
+	newAd := changer(ad)
+	err = validator.Validate(newAd)
+	if err != nil {
+		return ad, Error{
 			Err:     ErrInvalidContent,
 			Type:    "ad",
 			ID:      ad.ID,
@@ -99,34 +104,26 @@ func (a App) change(ctx context.Context, ad ads.Ad, changer func(ads.Ad) ads.Ad)
 	newAd.UpdateDate = time.Now().UTC()
 	err = a.repository.Update(ctx, newAd)
 	if err != nil {
-		return Error{
+		return ad, Error{
 			Err:  err,
 			Type: "ad",
 			ID:   ad.ID,
 		}
 	}
-	return nil
+	return ad, nil
 }
 
 // ChangeStatus changes ad's status only if userID is equal to author id of the ad
-func (a App) ChangeStatus(ctx context.Context, id int64, userID int64, published bool) error {
-	ad, err := a.getEditable(ctx, id, userID)
-	if err != nil {
-		return err
-	}
-	return a.change(ctx, ad, func(ad ads.Ad) ads.Ad {
+func (a App) ChangeStatus(ctx context.Context, id int64, authorID int64, published bool) (ads.Ad, error) {
+	return a.change(ctx, id, authorID, func(ad ads.Ad) ads.Ad {
 		ad.Published = published
 		return ad
 	})
 }
 
 // Update changes ad's content (title and text) only if userID is equal to author id of the ad
-func (a App) Update(ctx context.Context, id int64, userID int64, title string, text string) error {
-	ad, err := a.getEditable(ctx, id, userID)
-	if err != nil {
-		return err
-	}
-	return a.change(ctx, ad, func(ad ads.Ad) ads.Ad {
+func (a App) Update(ctx context.Context, id int64, authorID int64, title string, text string) (ads.Ad, error) {
+	return a.change(ctx, id, authorID, func(ad ads.Ad) ads.Ad {
 		ad.Title, ad.Text = title, text
 		return ad
 	})
@@ -143,6 +140,10 @@ func (a App) GetFiltered(ctx context.Context, opt Filter) ([]ads.Ad, error) {
 		}
 	}
 	return list, nil
+}
+
+func (a App) GetOnlyPublished(ctx context.Context, ids []int64) ([]ads.Ad, error) {
+	return a.repository.GetOnlyPublished(ctx, ids)
 }
 
 // Delete removes ad with got id if userID equals to author ID of the ad
@@ -164,7 +165,7 @@ func (a App) Delete(ctx context.Context, id int64, userID int64) error {
 
 // Search finds ads with prefix equals to title
 func (a App) Search(ctx context.Context, title string) ([]ads.Ad, error) {
-	list, err := a.repository.GetFiltered(ctx, Filter{Prefix: title, AuthorID: -1, All: true})
+	list, err := a.repository.GetFiltered(ctx, Filter{Title: title, AuthorID: -1, All: true})
 	if err != nil {
 		return nil, Error{
 			Err:  err,

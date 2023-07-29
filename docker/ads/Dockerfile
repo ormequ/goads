@@ -15,12 +15,10 @@ FROM alpine
 WORKDIR /build
 
 COPY --from=builder /build/ads /build/ads
-COPY --from=builder /build/config/ads.env /build/config/config.env
 
-ENV CONFIG_PATH /config/config.env
-
-EXPOSE 18080
-EXPOSE 18081
+ENV CONFIG_PATH ""
+ENV GRPC_PORT 8000
+EXPOSE $GRPC_PORT
 
 RUN chmod +x ads
 

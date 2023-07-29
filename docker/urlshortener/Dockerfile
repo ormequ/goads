@@ -15,13 +15,10 @@ FROM alpine
 WORKDIR /build
 
 COPY --from=builder /build/urlshortener /build/urlshortener
-COPY --from=builder /build/config/urlshortener.env /build/config/config.env
 
-COPY cert cert
-
-ENV CONFIG_PATH /config/config.env
-
-EXPOSE 8888
+ENV CONFIG_PATH ""
+ENV GRPC_PORT 8000
+EXPOSE $GRPC_PORT
 
 RUN chmod +x urlshortener
 

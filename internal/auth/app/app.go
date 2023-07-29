@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	validator "github.com/ormequ/validator"
+	structValidator "github.com/ormequ/validator"
 	"goads/internal/auth/users"
 )
 
@@ -44,7 +44,7 @@ func (a App) Register(ctx context.Context, email string, name string, password s
 		return users.User{}, err
 	}
 	user := users.New(email, name, password)
-	err = validator.Validate(user)
+	err = structValidator.Validate(user)
 	if err != nil {
 		return users.User{}, errors.Join(err, ErrInvalidContent)
 	}
@@ -65,12 +65,8 @@ func (a App) Authenticate(ctx context.Context, email string, password string) (s
 	return a.Tokenizer.Generate(ctx, user.ID)
 }
 
-func (a App) Validate(ctx context.Context, token string) (users.User, error) {
-	id, err := a.Validator.Validate(ctx, token)
-	if err != nil {
-		return users.User{}, err
-	}
-	return a.GetByID(ctx, id)
+func (a App) Validate(ctx context.Context, token string) (int64, error) {
+	return a.Validator.Validate(ctx, token)
 }
 
 func (a App) GetByID(ctx context.Context, id int64) (users.User, error) {
@@ -78,37 +74,37 @@ func (a App) GetByID(ctx context.Context, id int64) (users.User, error) {
 }
 
 // change applies function changer for user and updates it in the repository
-func (a App) change(ctx context.Context, id int64, changer func(users.User) users.User) error {
+func (a App) change(ctx context.Context, id int64, changer func(users.User) users.User) (users.User, error) {
 	user, err := a.GetByID(ctx, id)
 	if err != nil {
-		return err
+		return user, err
 	}
 	newUser := changer(user)
-	err = validator.Validate(newUser)
+	err = structValidator.Validate(newUser)
 	if err != nil {
-		return errors.Join(err, ErrInvalidContent)
+		return newUser, errors.Join(err, ErrInvalidContent)
 	}
-	return a.Repo.Update(ctx, newUser)
+	return newUser, a.Repo.Update(ctx, newUser)
 }
 
-func (a App) ChangeEmail(ctx context.Context, id int64, email string) error {
+func (a App) ChangeEmail(ctx context.Context, id int64, email string) (users.User, error) {
 	return a.change(ctx, id, func(user users.User) users.User {
 		user.Email = email
 		return user
 	})
 }
 
-func (a App) ChangeName(ctx context.Context, id int64, name string) error {
+func (a App) ChangeName(ctx context.Context, id int64, name string) (users.User, error) {
 	return a.change(ctx, id, func(user users.User) users.User {
 		user.Name = name
 		return user
 	})
 }
 
-func (a App) ChangePassword(ctx context.Context, id int64, password string) error {
+func (a App) ChangePassword(ctx context.Context, id int64, password string) (users.User, error) {
 	hash, err := a.Hasher.Generate(ctx, password)
 	if err != nil {
-		return err
+		return users.User{}, err
 	}
 	return a.change(ctx, id, func(user users.User) users.User {
 		user.Password = hash

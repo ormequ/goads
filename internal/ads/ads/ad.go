@@ -42,5 +42,6 @@ func New(title string, text string, authorID int64) Ad {
 		Text:       text,
 		CreateDate: time.Now().UTC(),
 		UpdateDate: time.Now().UTC(),
+		Published:  true,
 	}
 }

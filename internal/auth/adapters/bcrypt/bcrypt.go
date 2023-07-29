@@ -16,6 +16,9 @@ func (b BCrypt) Generate(ctx context.Context, password string) (string, error) {
 	if ctx.Err() != nil {
 		return "", ctx.Err()
 	}
+	if len(password) == 0 {
+		return "", app.ErrPasswordToShort
+	}
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), b.cost)
 	return string(bytes), err
 }

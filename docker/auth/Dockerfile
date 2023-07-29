@@ -15,14 +15,10 @@ FROM alpine
 WORKDIR /build
 
 COPY --from=builder /build/auth /build/auth
-COPY --from=builder /build/config/auth.env /build/config/config.env
 
-COPY cert cert
-
-ENV CONFIG_PATH /config/config.env
-
-EXPOSE 8080
-EXPOSE 8081
+ENV CONFIG_PATH ""
+ENV GRPC_PORT 8000
+EXPOSE $GRPC_PORT
 
 RUN chmod +x auth
 

@@ -21,7 +21,7 @@ const (
 
 func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 	const query = `INSERT INTO ads (author_id, published, title, text, create_date, update_date) 	
-			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+			       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
 	var id int64 = -1
 	err := r.db.QueryRow(
@@ -41,15 +41,36 @@ func (r Ads) Store(ctx context.Context, ad ads.Ad) (int64, error) {
 }
 
 func (r Ads) GetByID(ctx context.Context, id int64) (ads.Ad, error) {
-	const query = `SELECT id, author_id, published, title, text, create_date, update_date FROM ads WHERE id=$1`
+	const query = `SELECT id, author_id, published, title, text, create_date, update_date 
+                   FROM ads WHERE id=$1`
 
 	var ad ads.Ad
 	err := r.db.QueryRow(ctx, query, id).
 		Scan(&ad.ID, &ad.AuthorID, &ad.Published, &ad.Title, &ad.Text, &ad.CreateDate, &ad.UpdateDate)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrNotFound)
 	}
 	return ad, err
+}
+
+func (r Ads) GetOnlyPublished(ctx context.Context, ids []int64) ([]ads.Ad, error) {
+	const query = `SELECT id, author_id, published, title, text, create_date, update_date 
+			  FROM ads WHERE published = true AND id = ANY($1)`
+
+	rows, err := r.db.Query(ctx, query, ids)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, errors.Join(app.ErrNotFound)
+	}
+	var res []ads.Ad
+	for rows.Next() {
+		var ad ads.Ad
+		err := rows.Scan(&ad.ID, &ad.AuthorID, &ad.Published, &ad.Title, &ad.Text, &ad.CreateDate, &ad.UpdateDate)
+		if err != nil {
+			return res, err
+		}
+		res = append(res, ad)
+	}
+	return res, nil
 }
 
 func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, error) {
@@ -87,8 +108,8 @@ func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, erro
 	} else {
 		query += " AND "
 	}
-	query += "title LIKE $1 || '%'"
-	rows, err := r.db.Query(ctx, query, filter.Prefix)
+	query += "title LIKE '%' || $1 || '%'"
+	rows, err := r.db.Query(ctx, query, filter.Title)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +128,14 @@ func (r Ads) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, erro
 }
 
 func (r Ads) Update(ctx context.Context, ad ads.Ad) error {
-	const query = `UPDATE ads SET author_id=$1, published=$2, title=$3, text=$4, create_date=$5, update_date=$6 WHERE id=$7`
+	const query = `UPDATE ads SET author_id=$1, published=$2, title=$3, text=$4, create_date=$5, update_date=$6 
+                   WHERE id=$7`
 
 	_, err := r.db.Exec(
 		ctx, query,
 		ad.AuthorID, ad.Published, ad.Title, ad.Text, ad.GetCreateDate(), ad.GetUpdateDate(), ad.ID,
 	)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrNotFound)
 	}
 	return err
@@ -123,7 +145,7 @@ func (r Ads) Delete(ctx context.Context, id int64) error {
 	const query = `DELETE FROM ads WHERE id=$1`
 
 	_, err := r.db.Exec(ctx, query, id)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrNotFound)
 	}
 	return err

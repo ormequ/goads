@@ -6,8 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"goads/internal/ads/adapters/pgrepo"
 	"goads/internal/ads/app"
-	"goads/internal/ads/ports/grpc"
-	"goads/internal/ads/ports/httpgin"
+	"goads/internal/ads/grpc"
 	"goads/internal/pkg/config"
 	"goads/internal/pkg/shutdown"
 	"golang.org/x/sync/errgroup"
@@ -17,8 +16,7 @@ import (
 
 type Config struct {
 	Env              string `env:"ENV" env-default:"local"`
-	HTTPAddress      string `env:"HTTP_ADDRESS" env-default:"18080"`
-	GRPCAddress      string `env:"GRPC_ADDRESS" env-default:"18081"`
+	GRPCAddress      string `env:"GRPC_ADDRESS" env-default:":18081"`
 	PostgresHost     string `env:"POSTGRES_HOST" env-required:"true"`
 	PostgresPort     uint16 `env:"POSTGRES_PORT" env-required:"true"`
 	PostgresUser     string `env:"POSTGRES_USER" env-required:"true"`
@@ -42,11 +40,9 @@ func main() {
 	}
 	defer func() { _ = conn.Close(ctx) }()
 
-	adsApp := app.New(pgrepo.New(conn))
-	httpServer := httpgin.NewServer(cfg.HTTPAddress, adsApp)
-	grpcServer := grpc.NewServer(cfg.GRPCAddress, adsApp)
+	grpcServer := grpc.NewServer(cfg.GRPCAddress, app.New(pgrepo.New(conn)))
 
-	shutdown.Gracefully(eg, ctx, httpServer, grpcServer)
+	shutdown.Gracefully(eg, ctx, grpcServer)
 
 	if err := eg.Wait(); err != nil {
 		log.Println("Graceful shutdown servers:", err)

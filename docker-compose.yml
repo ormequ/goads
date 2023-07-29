@@ -3,10 +3,8 @@ version: "3"
 services:
   postgres:
     image: postgres:14
-    environment:
-      POSTGRES_DB: "goads"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "root"
+    env_file:
+      - config/services.env
     ports:
       - "5433:5432"
     networks:
@@ -33,14 +31,11 @@ services:
     links:
       - postgres
     ports:
-      - "18080:18080"
-      - "18081:18081"
+      - "18000:8000"
     networks:
       - default
     env_file:
-      - config/ads.env
-    environment:
-      CONFIG_PATH: ""
+      - config/services.env
   auth:
     build:
       dockerfile: docker/auth/Dockerfile
@@ -51,14 +46,13 @@ services:
     links:
       - postgres
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "18001:8000"
     networks:
       - default
     env_file:
-      - config/auth.env
-    environment:
-      CONFIG_PATH: ""
+      - config/services.env
+    volumes:
+      - ./cert:/build/cert
   url_shortener:
     build:
       dockerfile: docker/urlshortener/Dockerfile
@@ -69,13 +63,29 @@ services:
     links:
       - postgres
     ports:
-      - "8888:8888"
+      - "18002:8000"
     networks:
       - default
     env_file:
-      - config/urlshortener.env
-    environment:
-      CONFIG_PATH: ""
+      - config/services.env
+  api:
+    build:
+      dockerfile: docker/api/Dockerfile
+      context: .
+    depends_on:
+      - ads
+      - auth
+      - url_shortener
+    links:
+      - ads
+      - auth
+      - url_shortener
+    networks:
+      - default
+    ports:
+      - "80:80"
+    env_file:
+      - config/api.env
 
 networks:
   default:

@@ -7,8 +7,7 @@ import (
 	"goads/internal/auth/adapters/jwt"
 	"goads/internal/auth/adapters/pgrepo"
 	"goads/internal/auth/app"
-	"goads/internal/auth/ports/grpc"
-	"goads/internal/auth/ports/httpgin"
+	"goads/internal/auth/grpc"
 	"goads/internal/pkg/config"
 	"goads/internal/pkg/shutdown"
 	"golang.org/x/sync/errgroup"
@@ -25,7 +24,6 @@ type Config struct {
 	PublicKey    string `env:"AUTH_PUBLIC_KEY" env-required:"true"`
 	Expires      int    `env:"AUTH_EXPIRES_HOURS" env-default:"24"`
 	PasswordCost int    `env:"PASSWORD_COST" env-default:"10"`
-	HTTPAddress  string `env:"HTTP_ADDRESS" env-default:":8080"`
 	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8081"`
 	DBHost       string `env:"POSTGRES_HOST" env-required:"true"`
 	DBPort       uint16 `env:"POSTGRES_PORT" env-required:"true"`
@@ -63,10 +61,9 @@ func main() {
 
 	a := app.New(pgrepo.New(conn), tokenizer, bcrypt.New(cfg.PasswordCost), validator)
 
-	httpServer := httpgin.NewServer(cfg.HTTPAddress, a)
 	grpcServer := grpc.NewServer(cfg.GRPCAddress, a)
 
-	shutdown.Gracefully(eg, ctx, httpServer, grpcServer)
+	shutdown.Gracefully(eg, ctx, grpcServer)
 
 	if err := eg.Wait(); err != nil {
 		log.Println("Graceful shutdown server:", err)

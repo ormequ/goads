@@ -19,9 +19,9 @@ func mustReadFile(file string) []byte {
 }
 
 func Test(t *testing.T) {
-	tokenizer, err := NewTokenizer(720*time.Hour, mustReadFile("../../../../cert/private.key"))
+	tokenizer, err := NewTokenizer(720*time.Hour, mustReadFile("../../../../cert/example.key"))
 	require.NoError(t, err)
-	validator, err := NewValidator(mustReadFile("../../../../cert/public.key.pub"))
+	validator, err := NewValidator(mustReadFile("../../../../cert/example.key.pub"))
 	require.NoError(t, err)
 	fmt.Println(tokenizer, validator)
 	token, err := tokenizer.Generate(context.Background(), 100500)

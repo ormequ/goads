@@ -8,7 +8,7 @@ import (
 	"goads/internal/urlshortener/adapters/pgrepo"
 	"goads/internal/urlshortener/app"
 	"goads/internal/urlshortener/generator"
-	"goads/internal/urlshortener/ports/grpc"
+	"goads/internal/urlshortener/grpc"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"

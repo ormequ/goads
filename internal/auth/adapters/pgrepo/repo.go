@@ -38,7 +38,7 @@ func (r Repo) GetByEmail(ctx context.Context, email string) (users.User, error) 
 
 	var usr users.User
 	err := r.db.QueryRow(ctx, query, email).Scan(&usr.ID, &usr.Email, &usr.Password)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrIncorrectCredentials)
 	}
 	return usr, err
@@ -49,7 +49,7 @@ func (r Repo) GetByID(ctx context.Context, id int64) (users.User, error) {
 
 	var user users.User
 	err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Email, &user.Name)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrNotFound)
 	}
 	return user, err
@@ -59,7 +59,7 @@ func (r Repo) Update(ctx context.Context, user users.User) error {
 	const query = `UPDATE users SET email=$1, name=$2, password=$3 WHERE id=$4`
 
 	_, err := r.db.Exec(ctx, query, user.Email, user.Name, user.Password, user.ID)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = errors.Join(app.ErrNotFound)
 	}
 	return err
