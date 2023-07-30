@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"goads/internal/pkg/config"
 	"goads/internal/pkg/shutdown"
 	"goads/internal/urlshortener/adapters/pgrepo"
@@ -17,13 +16,9 @@ import (
 )
 
 type Config struct {
-	Env         string `env:"ENV" env-default:"local"`
-	GRPCAddress string `env:"GRPC_ADDRESS" env-default:":8081"`
-	DBHost      string `env:"POSTGRES_HOST" env-required:"true"`
-	DBPort      uint16 `env:"POSTGRES_PORT" env-required:"true"`
-	DBUser      string `env:"POSTGRES_USER" env-required:"true"`
-	DBPassword  string `env:"POSTGRES_PASSWORD" env-required:"true"`
-	DBName      string `env:"POSTGRES_DB" env-required:"true"`
+	Env          string `env:"ENV" env-default:"local"`
+	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8081"`
+	PostgresConn string `env:"POSTGRES_CONN" env-required:"true"`
 }
 
 func main() {
@@ -31,7 +26,7 @@ func main() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
+	conn, err := pgx.Connect(ctx, cfg.PostgresConn)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"goads/internal/auth/adapters/bcrypt"
 	"goads/internal/auth/adapters/jwt"
 	"goads/internal/auth/adapters/pgrepo"
@@ -25,11 +24,7 @@ type Config struct {
 	Expires      int    `env:"AUTH_EXPIRES_HOURS" env-default:"24"`
 	PasswordCost int    `env:"PASSWORD_COST" env-default:"10"`
 	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8081"`
-	DBHost       string `env:"POSTGRES_HOST" env-required:"true"`
-	DBPort       uint16 `env:"POSTGRES_PORT" env-required:"true"`
-	DBUser       string `env:"POSTGRES_USER" env-required:"true"`
-	DBPassword   string `env:"POSTGRES_PASSWORD" env-required:"true"`
-	DBName       string `env:"POSTGRES_DB" env-required:"true"`
+	PostgresConn string `env:"POSTGRES_CONN" env-required:"true"`
 }
 
 func mustReadFile(file string) []byte {
@@ -53,7 +48,7 @@ func main() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
+	conn, err := pgx.Connect(ctx, cfg.PostgresConn)
 	if err != nil {
 		log.Fatal(err)
 	}

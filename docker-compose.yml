@@ -3,8 +3,11 @@ version: "3"
 services:
   postgres:
     image: postgres:14
-    env_file:
-      - config/services.env
+    environment:
+      POSTGRES_HOST: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "root"
+      POSTGRES_DB: "goads"
     ports:
       - "5433:5432"
     networks:
