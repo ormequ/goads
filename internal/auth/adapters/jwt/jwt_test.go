@@ -2,33 +2,35 @@ package jwt
 
 import (
 	"context"
-	"fmt"
+	"crypto/rand"
+	"crypto/rsa"
 	"github.com/stretchr/testify/require"
-	"log"
-	"os"
 	"testing"
 	"time"
 )
 
-func mustReadFile(file string) []byte {
-	b, err := os.ReadFile(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return b
+func setup(t require.TestingT, expires time.Duration) (Tokenizer, Validator) {
+	private, err := rsa.GenerateKey(rand.Reader, 4096)
+	require.NoError(t, err)
+
+	require.NoError(t, err)
+	return Tokenizer{
+		privateKey: private,
+		expires:    expires,
+	}, Validator{publicKey: private.Public().(*rsa.PublicKey)}
 }
 
-func Test(t *testing.T) {
-	tokenizer, err := NewTokenizer(720*time.Hour, mustReadFile("../../../../cert/example.key"))
-	require.NoError(t, err)
-	validator, err := NewValidator(mustReadFile("../../../../cert/example.key.pub"))
-	require.NoError(t, err)
-	fmt.Println(tokenizer, validator)
-	token, err := tokenizer.Generate(context.Background(), 100500)
-	require.NoError(t, err)
-	fmt.Println(token)
-	id, err := validator.Validate(context.Background(), token)
-	require.NoError(t, err)
-	fmt.Println(id)
-	require.Equal(t, id, 100500)
+func FuzzCorrectJWT(f *testing.F) {
+	tok, val := setup(f, time.Hour)
+	f.Add(int64(0))
+	f.Fuzz(func(t *testing.T, id int64) {
+		token, err := tok.Generate(context.Background(), id)
+		require.NoError(t, err)
+		got, err := val.Validate(context.Background(), token)
+		require.NoError(t, err)
+		require.Equal(t, id, got)
+	})
+}
+
+func TestJWT(t *testing.T) {
 }

@@ -37,6 +37,7 @@ func (t Tokenizer) Generate(ctx context.Context, id int64) (string, error) {
 
 func NewTokenizer(expires time.Duration, privateKey []byte) (Tokenizer, error) {
 	block, _ := pem.Decode(privateKey)
+	fmt.Println(block)
 	k, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return Tokenizer{}, err

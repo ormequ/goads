@@ -29,7 +29,12 @@ func Gracefully(eg *errgroup.Group, ctx context.Context, servers ...Server) {
 
 	for _, s := range servers {
 		s := s
-		eg.Go(func() error {
+		eg.Go(func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("server panic with error: %v", r)
+				}
+			}()
 			return s.Listen(ctx)
 		})
 	}
