@@ -17,13 +17,16 @@ func getErrorStatus(err error) error {
 	if errors.Is(err, app.ErrNoAds) {
 		code = codes.OK
 	}
-	if errors.Is(err, app.ErrAlreadyExists) {
+	if errors.Is(err, app.ErrInvalidContent) {
+		code = codes.InvalidArgument
+	}
+	if errors.Is(err, app.ErrAlreadyExists) || errors.Is(err, app.ErrAdAlreadyAdded) {
 		code = codes.AlreadyExists
 	}
 	if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrAdNotExists) {
 		code = codes.NotFound
 	}
-	if errors.Is(err, app.ErrPermisionDenied) {
+	if errors.Is(err, app.ErrPermissionDenied) {
 		code = codes.PermissionDenied
 	}
 	return status.Error(code, err.Error())

@@ -7,6 +7,7 @@ import (
 	"goads/internal/urlshortener/links"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=Repository
 type Repository interface {
 	Store(ctx context.Context, link links.Link) (int64, error)
 	GetByID(ctx context.Context, id int64) (links.Link, error)
@@ -18,6 +19,7 @@ type Repository interface {
 	Delete(ctx context.Context, id int64) error
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=Generator
 type Generator interface {
 	Generate(ctx context.Context) (string, error)
 }
@@ -47,7 +49,7 @@ func (a App) Create(ctx context.Context, url string, alias string, authorID int6
 	link := links.New(url, alias, authorID, ads)
 	err = validator.Validate(link)
 	if err != nil {
-		return link, err
+		return link, errors.Join(ErrInvalidContent, err)
 	}
 	link.ID, err = a.repo.Store(ctx, link)
 	return link, err
@@ -71,7 +73,7 @@ func (a App) getEditable(ctx context.Context, id int64, authorID int64) (links.L
 		return link, err
 	}
 	if link.AuthorID != authorID {
-		return link, ErrPermisionDenied
+		return link, ErrPermissionDenied
 	}
 	return link, nil
 }
@@ -95,6 +97,9 @@ func (a App) UpdateAlias(ctx context.Context, id int64, authorID int64, alias st
 		return link, err
 	}
 	err = a.repo.UpdateAlias(ctx, id, alias)
+	if err != nil {
+		link.Alias = prev
+	}
 	return link, err
 }
 
@@ -102,6 +107,11 @@ func (a App) AddAd(ctx context.Context, linkID int64, adID int64, authorID int64
 	link, err := a.getEditable(ctx, linkID, authorID)
 	if err != nil {
 		return link, err
+	}
+	for i := range link.Ads {
+		if link.Ads[i] == adID {
+			return link, ErrAdAlreadyAdded
+		}
 	}
 	err = a.repo.AddAd(ctx, linkID, adID)
 	if err == nil {
@@ -115,14 +125,19 @@ func (a App) DeleteAd(ctx context.Context, linkID int64, adID int64, authorID in
 	if err != nil {
 		return link, err
 	}
+	adIdx := -1
+	for i, v := range link.Ads {
+		if v == adID {
+			adIdx = i
+			break
+		}
+	}
+	if adIdx == -1 {
+		return link, ErrNotFound
+	}
 	err = a.repo.DeleteAd(ctx, linkID, adID)
 	if err == nil {
-		for i, v := range link.Ads {
-			if v == adID {
-				link.Ads = append(link.Ads[:i], link.Ads[i+1:]...)
-				break
-			}
-		}
+		link.Ads = append(link.Ads[:adIdx], link.Ads[adIdx+1:]...)
 	}
 	return link, err
 }

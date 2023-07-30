@@ -46,7 +46,7 @@ func (a App) Register(ctx context.Context, email string, name string, password s
 	user := users.New(email, name, password)
 	err = structValidator.Validate(user)
 	if err != nil {
-		return users.User{}, errors.Join(err, ErrInvalidContent)
+		return user, errors.Join(err, ErrInvalidContent)
 	}
 
 	user.ID, err = a.Repo.Store(ctx, user)

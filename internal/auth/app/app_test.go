@@ -179,9 +179,14 @@ func TestApp_Register(t *testing.T) {
 				name:     "test",
 				password: "asdf",
 			},
+			want: users.User{
+				ID:       0,
+				Email:    "",
+				Name:     "test",
+				Password: "asdf_hash",
+			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrInvalidContent, i)
-				return false
+				return assert.ErrorIs(t, err, ErrInvalidContent, i)
 			},
 		},
 		{
@@ -196,9 +201,14 @@ func TestApp_Register(t *testing.T) {
 				name:     "test",
 				password: "asdf",
 			},
+			want: users.User{
+				ID:       -1,
+				Email:    "already@exists.com",
+				Name:     "test",
+				Password: "asdf_hash",
+			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrEmailAlreadyExists, i)
-				return false
+				return assert.ErrorIs(t, err, ErrEmailAlreadyExists, i)
 			},
 		},
 		{
@@ -210,8 +220,7 @@ func TestApp_Register(t *testing.T) {
 				ctx: canceledCtx,
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, canceledCtx.Err(), i)
-				return false
+				return assert.ErrorIs(t, err, canceledCtx.Err(), i)
 			},
 		},
 	}
@@ -278,8 +287,7 @@ func TestApp_Authenticate(t *testing.T) {
 				ctx: canceledCtx,
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, canceledCtx.Err(), i)
-				return false
+				return assert.ErrorIs(t, err, canceledCtx.Err(), i)
 			},
 		},
 		{
@@ -293,8 +301,7 @@ func TestApp_Authenticate(t *testing.T) {
 				password: "test",
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrIncorrectCredentials, i)
-				return false
+				return assert.ErrorIs(t, err, ErrIncorrectCredentials, i)
 			},
 		},
 		{
@@ -309,8 +316,7 @@ func TestApp_Authenticate(t *testing.T) {
 				password: "",
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrIncorrectCredentials, i)
-				return false
+				return assert.ErrorIs(t, err, ErrIncorrectCredentials, i)
 			},
 		},
 	}
@@ -380,8 +386,7 @@ func TestApp_ChangePassword(t *testing.T) {
 				password: "test",
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrNotFound, i)
-				return false
+				return assert.ErrorIs(t, err, ErrNotFound, i)
 			},
 		},
 		{
@@ -393,8 +398,7 @@ func TestApp_ChangePassword(t *testing.T) {
 				ctx: context.Background(),
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrPasswordToShort, i)
-				return false
+				return assert.ErrorIs(t, err, ErrPasswordToShort, i)
 			},
 		},
 		{
@@ -408,9 +412,14 @@ func TestApp_ChangePassword(t *testing.T) {
 				id:       0,
 				password: "not_found",
 			},
+			want: users.User{
+				ID:       0,
+				Email:    "test@test.com",
+				Name:     "test",
+				Password: "not_found_hash",
+			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrNotFound, i)
-				return false
+				return assert.ErrorIs(t, err, ErrNotFound, i)
 			},
 		},
 	}

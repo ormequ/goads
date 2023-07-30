@@ -46,12 +46,12 @@ func TestBCrypt_Generate(t *testing.T) {
 			name:   "canceled context",
 			fields: fields{Cost: 10},
 			args: args{
-				ctx:      bgCtx,
+				ctx:      canceledCtx,
 				password: "qwe123!!~....утф😊",
 			},
 			want: "",
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return errors.Is(err, canceledCtx.Err())
+				return assert.ErrorIs(t, err, canceledCtx.Err())
 			},
 		},
 	}
@@ -115,7 +115,7 @@ func TestBCrypt_Compare(t *testing.T) {
 				password: "qwe123!!~....ут😊ф",
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return errors.Is(err, app.ErrIncorrectCredentials)
+				return assert.ErrorIs(t, err, app.ErrIncorrectCredentials)
 			},
 		},
 		{
