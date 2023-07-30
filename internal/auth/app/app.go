@@ -113,11 +113,7 @@ func (a App) ChangePassword(ctx context.Context, id int64, password string) (use
 }
 
 func (a App) Delete(ctx context.Context, id int64) error {
-	err := a.Repo.Delete(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
+	return a.Repo.Delete(ctx, id)
 }
 
 func New(repository Repository, tokenizer Tokenizer, hasher Hasher, validator Validator) App {
