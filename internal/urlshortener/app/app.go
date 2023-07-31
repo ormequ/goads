@@ -29,7 +29,7 @@ type Generator interface {
 	Generate(ctx context.Context) (string, error)
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=AdService
+//go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=AdsService
 type AdsService interface {
 	GetOnlyPublished(ctx context.Context, ids []int64) ([]ads.Ad, error)
 }
