@@ -5,6 +5,7 @@ import (
 	"errors"
 	structValidator "github.com/ormequ/validator"
 	"goads/internal/auth/users"
+	"goads/internal/pkg/errwrap"
 )
 
 //go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=Repository
@@ -39,6 +40,8 @@ type App struct {
 }
 
 func (a App) Register(ctx context.Context, email string, name string, password string) (users.User, error) {
+	const op = "app.Register"
+
 	password, err := a.Hasher.Generate(ctx, password)
 	if err != nil {
 		return users.User{}, err
@@ -46,74 +49,92 @@ func (a App) Register(ctx context.Context, email string, name string, password s
 	user := users.New(email, name, password)
 	err = structValidator.Validate(user)
 	if err != nil {
-		return user, errors.Join(err, ErrInvalidContent)
+		err = errors.Join(ErrInvalidContent, err)
+		return user, errwrap.New(err, ServiceName, op)
 	}
-
 	user.ID, err = a.Repo.Store(ctx, user)
-	return user, err
+	return user, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) Authenticate(ctx context.Context, email string, password string) (string, error) {
+	const op = "app.Authenticate"
+
 	user, err := a.Repo.GetByEmail(ctx, email)
 	if err != nil {
-		return "", err
+		return "", errwrap.JoinWithCaller(err, op)
 	}
 	err = a.Hasher.Compare(ctx, user.Password, password)
 	if err != nil {
-		return "", err
+		return "", errwrap.JoinWithCaller(err, op)
 	}
-	return a.Tokenizer.Generate(ctx, user.ID)
+	token, err := a.Tokenizer.Generate(ctx, user.ID)
+	return token, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) Validate(ctx context.Context, token string) (int64, error) {
-	return a.Validator.Validate(ctx, token)
+	const op = "app.Validate"
+	id, err := a.Validator.Validate(ctx, token)
+	return id, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) GetByID(ctx context.Context, id int64) (users.User, error) {
-	return a.Repo.GetByID(ctx, id)
+	const op = "app.GetByID"
+	user, err := a.Repo.GetByID(ctx, id)
+	return user, errwrap.JoinWithCaller(err, op)
 }
 
 // change applies function changer for user and updates it in the repository
 func (a App) change(ctx context.Context, id int64, changer func(users.User) users.User) (users.User, error) {
+	const op = "app.change"
 	user, err := a.GetByID(ctx, id)
 	if err != nil {
-		return user, err
+		return user, errwrap.JoinWithCaller(err, op)
 	}
 	newUser := changer(user)
 	err = structValidator.Validate(newUser)
 	if err != nil {
-		return newUser, errors.Join(err, ErrInvalidContent)
+		err = errors.Join(ErrInvalidContent, err)
+		return user, errwrap.New(err, ServiceName, op)
 	}
-	return newUser, a.Repo.Update(ctx, newUser)
+	err = a.Repo.Update(ctx, newUser)
+	return newUser, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) ChangeEmail(ctx context.Context, id int64, email string) (users.User, error) {
-	return a.change(ctx, id, func(user users.User) users.User {
+	const op = "app.ChangeEmail"
+	user, err := a.change(ctx, id, func(user users.User) users.User {
 		user.Email = email
 		return user
 	})
+	return user, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) ChangeName(ctx context.Context, id int64, name string) (users.User, error) {
-	return a.change(ctx, id, func(user users.User) users.User {
+	const op = "app.ChangeName"
+	user, err := a.change(ctx, id, func(user users.User) users.User {
 		user.Name = name
 		return user
 	})
+	return user, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) ChangePassword(ctx context.Context, id int64, password string) (users.User, error) {
+	const op = "app.ChangePassword"
 	hash, err := a.Hasher.Generate(ctx, password)
 	if err != nil {
-		return users.User{}, err
+		return users.User{}, errwrap.JoinWithCaller(err, op)
 	}
-	return a.change(ctx, id, func(user users.User) users.User {
+	user, err := a.change(ctx, id, func(user users.User) users.User {
 		user.Password = hash
 		return user
 	})
+	return user, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) Delete(ctx context.Context, id int64) error {
-	return a.Repo.Delete(ctx, id)
+	const op = "app.Delete"
+	err := a.Repo.Delete(ctx, id)
+	return errwrap.JoinWithCaller(err, op)
 }
 
 func New(repository Repository, tokenizer Tokenizer, hasher Hasher, validator Validator) App {

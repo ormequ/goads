@@ -5,6 +5,7 @@ import (
 	"goads/internal/auth/app"
 	"goads/internal/auth/proto"
 	"goads/internal/auth/users"
+	"goads/internal/pkg/errwrap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,6 +15,10 @@ func getErrorStatus(err error) error {
 		return nil
 	}
 	code := codes.Internal
+	var wrap *errwrap.Error
+	if errors.As(err, wrap) {
+		err = wrap.Unwrap() // hiding error information
+	}
 	if errors.Is(err, app.ErrNotFound) {
 		code = codes.NotFound
 	}
@@ -25,6 +30,9 @@ func getErrorStatus(err error) error {
 	}
 	if errors.Is(err, app.ErrEmailAlreadyExists) {
 		code = codes.AlreadyExists
+	}
+	if code == codes.Internal {
+		err = errors.New("internal error")
 	}
 	return status.Error(code, err.Error())
 }

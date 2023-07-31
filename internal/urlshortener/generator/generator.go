@@ -3,6 +3,7 @@ package generator
 import (
 	"context"
 	"fmt"
+	"goads/internal/pkg/errwrap"
 	"math"
 	"math/rand"
 )
@@ -21,9 +22,10 @@ const symbols = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 // n = estimating of repository size. With this function probability of duplication lower
 // than 1/62^2 = 1/3844. With n > 15e6 P(duplication) = 1/sqrt(n)
 func (g Generator) Generate(ctx context.Context) (string, error) {
+	const op = "generator.Generate"
 	sz, err := g.Repo.SizeApprox(ctx)
 	if err != nil {
-		return "", err
+		return "", errwrap.JoinWithCaller(err, op)
 	}
 	if sz < 1 {
 		sz = 1 // prevent log(x), x <= 0

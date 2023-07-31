@@ -5,8 +5,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"goads/internal/auth/app"
+	"goads/internal/pkg/errwrap"
 	"time"
 )
 
@@ -16,8 +19,10 @@ type Tokenizer struct {
 }
 
 func (t Tokenizer) Generate(ctx context.Context, id int64) (string, error) {
+	const op = "jwt.Generate"
+
 	if ctx.Err() != nil {
-		return "", ctx.Err()
+		return "", errwrap.New(ctx.Err(), app.ServiceName, op)
 	}
 
 	now := time.Now().UTC()
@@ -29,18 +34,19 @@ func (t Tokenizer) Generate(ctx context.Context, id int64) (string, error) {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(t.privateKey)
 	if err != nil {
-		return "", fmt.Errorf("create: sign token: %w", err)
+		err = errwrap.New(errors.New("cannot sign token"), app.ServiceName, op).WithDetails(err.Error())
 	}
-
-	return token, nil
+	return token, err
 }
 
 func NewTokenizer(expires time.Duration, privateKey []byte) (Tokenizer, error) {
+	const op = "jwt.NewTokenizer"
+
 	block, _ := pem.Decode(privateKey)
 	fmt.Println(block)
 	k, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return Tokenizer{}, err
+		return Tokenizer{}, errwrap.New(err, app.ServiceName, op)
 	}
 	return Tokenizer{
 		expires:    expires,

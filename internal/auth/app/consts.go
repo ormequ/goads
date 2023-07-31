@@ -10,3 +10,5 @@ var (
 	ErrInvalidToken         = errors.New("invalid token")
 	ErrPasswordToShort      = errors.New("password to short")
 )
+
+const ServiceName = "Auth"

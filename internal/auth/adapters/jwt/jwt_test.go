@@ -20,7 +20,7 @@ func setup(t require.TestingT, expires time.Duration) (Tokenizer, Validator) {
 	}, Validator{publicKey: private.Public().(*rsa.PublicKey)}
 }
 
-func FuzzCorrectJWT(f *testing.F) {
+func FuzzJWT(f *testing.F) {
 	tok, val := setup(f, time.Hour)
 	f.Add(int64(0))
 	f.Fuzz(func(t *testing.T, id int64) {
@@ -30,7 +30,4 @@ func FuzzCorrectJWT(f *testing.F) {
 		require.NoError(t, err)
 		require.Equal(t, id, got)
 	})
-}
-
-func TestJWT(t *testing.T) {
 }

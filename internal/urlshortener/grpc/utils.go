@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"errors"
+	"goads/internal/pkg/errwrap"
 	"goads/internal/urlshortener/app"
 	"goads/internal/urlshortener/links"
 	"goads/internal/urlshortener/proto"
@@ -14,6 +15,10 @@ func getErrorStatus(err error) error {
 		return nil
 	}
 	code := codes.Internal
+	var wrap *errwrap.Error
+	if errors.As(err, wrap) {
+		err = wrap.Unwrap() // hiding error information
+	}
 	if errors.Is(err, app.ErrNoAds) {
 		code = codes.OK
 	}
@@ -28,6 +33,9 @@ func getErrorStatus(err error) error {
 	}
 	if errors.Is(err, app.ErrPermissionDenied) {
 		code = codes.PermissionDenied
+	}
+	if code == codes.Internal {
+		err = errors.New("internal error")
 	}
 	return status.Error(code, err.Error())
 }
