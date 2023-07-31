@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	structValidator "github.com/ormequ/validator"
+	"github.com/ormequ/validator"
 	"goads/internal/auth/users"
 	"goads/internal/pkg/errwrap"
 )
@@ -47,7 +47,7 @@ func (a App) Register(ctx context.Context, email string, name string, password s
 		return users.User{}, err
 	}
 	user := users.New(email, name, password)
-	err = structValidator.Validate(user)
+	err = govalid.Validate(user)
 	if err != nil {
 		err = errors.Join(ErrInvalidContent, err)
 		return user, errwrap.New(err, ServiceName, op)
@@ -91,12 +91,15 @@ func (a App) change(ctx context.Context, id int64, changer func(users.User) user
 		return user, errwrap.JoinWithCaller(err, op)
 	}
 	newUser := changer(user)
-	err = structValidator.Validate(newUser)
+	err = govalid.Validate(newUser)
 	if err != nil {
 		err = errors.Join(ErrInvalidContent, err)
 		return user, errwrap.New(err, ServiceName, op)
 	}
 	err = a.Repo.Update(ctx, newUser)
+	if err != nil {
+		newUser = user
+	}
 	return newUser, errwrap.JoinWithCaller(err, op)
 }
 

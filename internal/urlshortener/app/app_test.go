@@ -246,6 +246,8 @@ func TestApp_AddAd(t *testing.T) {
 			got, err := a.AddAd(tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("AddAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "AddAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 		})
@@ -359,6 +361,8 @@ func TestApp_Create(t *testing.T) {
 			got, err := a.Create(tt.args.ctx, tt.args.url, tt.args.alias, tt.args.authorID, tt.args.ads)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("Create(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.url, tt.args.alias, tt.args.authorID, tt.args.ads)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "Create(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.url, tt.args.alias, tt.args.authorID, tt.args.ads)
 		})
@@ -493,6 +497,8 @@ func TestApp_DeleteAd(t *testing.T) {
 			got, err := a.DeleteAd(tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("DeleteAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "DeleteAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 		})
@@ -614,6 +620,8 @@ func TestApp_UpdateAlias(t *testing.T) {
 			got, err := a.UpdateAlias(tt.args.ctx, tt.args.id, tt.args.authorID, tt.args.alias)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("UpdateAlias(%v, %v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.authorID, tt.args.alias)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "UpdateAlias(%v, %v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.authorID, tt.args.alias)
 		})

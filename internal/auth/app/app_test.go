@@ -235,6 +235,8 @@ func TestApp_Register(t *testing.T) {
 			got, err := a.Register(tt.args.ctx, tt.args.email, tt.args.name, tt.args.password)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("Register(%v, %v, %v, %v)", tt.args.ctx, tt.args.email, tt.args.name, tt.args.password)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "Register(%v, %v, %v, %v)", tt.args.ctx, tt.args.email, tt.args.name, tt.args.password)
 		})
@@ -331,6 +333,8 @@ func TestApp_Authenticate(t *testing.T) {
 			got, err := a.Authenticate(tt.args.ctx, tt.args.email, tt.args.password)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("Authenticate(%v, %v, %v)", tt.args.ctx, tt.args.email, tt.args.password)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "Authenticate(%v, %v, %v)", tt.args.ctx, tt.args.email, tt.args.password)
 		})
@@ -416,7 +420,7 @@ func TestApp_ChangePassword(t *testing.T) {
 				ID:       0,
 				Email:    "test@test.com",
 				Name:     "test",
-				Password: "not_found_hash",
+				Password: "",
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				return assert.ErrorIs(t, err, ErrNotFound, i)
@@ -434,6 +438,8 @@ func TestApp_ChangePassword(t *testing.T) {
 			got, err := a.ChangePassword(tt.args.ctx, tt.args.id, tt.args.password)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("ChangePassword(%v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.password)) {
 				return
+			} else if tt.wantErr == nil {
+				assert.NoError(t, err)
 			}
 			assert.Equalf(t, tt.want, got, "ChangePassword(%v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.password)
 		})

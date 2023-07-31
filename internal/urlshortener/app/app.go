@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	validator "github.com/ormequ/validator"
+	"github.com/ormequ/validator"
 	"goads/internal/pkg/errwrap"
 	"goads/internal/urlshortener/links"
 )
@@ -54,7 +54,7 @@ func (a App) Create(ctx context.Context, url string, alias string, authorID int6
 		}
 	}
 	link := links.New(url, alias, authorID, ads)
-	err = validator.Validate(link)
+	err = govalid.Validate(link)
 	if err != nil {
 		err = errors.Join(ErrInvalidContent, err)
 		return link, errwrap.New(err, ServiceName, op)
@@ -107,7 +107,7 @@ func (a App) UpdateAlias(ctx context.Context, id int64, authorID int64, alias st
 	}
 	prev := link.Alias
 	link.Alias = alias
-	err = validator.Validate(link)
+	err = govalid.Validate(link)
 	if err != nil {
 		link.Alias = prev
 		err = errors.Join(ErrInvalidContent, err)
