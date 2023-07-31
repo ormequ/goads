@@ -13,7 +13,7 @@ The ad will be randomly selected from added ads and then shown to visitors befor
 
 ## Setup
 
-`docker-compose run`
+`docker-compose up`
 
 ## Project structure
 
