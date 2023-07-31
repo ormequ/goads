@@ -33,8 +33,6 @@ services:
       - migrate
     links:
       - postgres
-    ports:
-      - "18000:8000"
     networks:
       - default
     env_file:
@@ -48,8 +46,6 @@ services:
       - migrate
     links:
       - postgres
-    ports:
-      - "18001:8000"
     networks:
       - default
     env_file:
@@ -66,8 +62,6 @@ services:
       - ads
     links:
       - postgres
-    ports:
-      - "18002:8000"
     networks:
       - default
     env_file:
