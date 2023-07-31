@@ -15,7 +15,9 @@ The ad will be randomly selected from added ads and then shown to visitors befor
 
 `docker-compose run`
 
-## Структура проекта
+## Project structure
+
+![Диаграмма без названия drawio(1)](https://github.com/ormequ/goads/assets/57725831/b497ad29-71c5-4d46-bf0a-ac34e60fb384)
 
 1. Auth - user authentication. The database stores user data,
    which are used for password authentication, after which a JWT token is issued.
@@ -55,6 +57,8 @@ The ad will be randomly selected from added ads and then shown to visitors befor
 `docker-compose up`
 
 ## Структура проекта
+
+![Диаграмма без названия drawio(1)](https://github.com/ormequ/goads/assets/57725831/b497ad29-71c5-4d46-bf0a-ac34e60fb384)
 
 1. Auth - аутентификация пользователей. В БД хранятся пользовательские данные,
    по которым производится аутентификация по паролю, после чего выдается JWT токен.
