@@ -34,7 +34,7 @@ func New(addr string, authSvc authProto.AuthServiceClient, shSvc shProto.Shorten
 	})
 	auth.SetRoutes(api, authSvc)
 	ads.SetRoutes(api, authSvc, adsSvc)
-	urlshortener.SetRoutes(api, authSvc, shSvc, adsSvc)
+	urlshortener.SetRoutes(api, authSvc, shSvc)
 	return &s
 }
 

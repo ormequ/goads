@@ -9,6 +9,7 @@ service ShortenerService {
   rpc GetByID(GetByIDRequest) returns (LinkResponse) {}
   rpc GetByAuthor(GetByAuthorRequest) returns (LinksListResponse) {}
   rpc GetByAlias(GetByAliasRequest) returns (LinkResponse) {}
+  rpc GetRedirect(GetByAliasRequest) returns (RedirectResponse) {}
   rpc UpdateAlias(UpdateAliasRequest) returns (LinkResponse) {}
   rpc AddAd(LinkAdRequest) returns (LinkResponse) {}
   rpc DeleteAd(LinkAdRequest) returns (LinkResponse) {}
@@ -44,6 +45,17 @@ message GetByAuthorRequest {
 
 message GetByAliasRequest {
   string alias = 1;
+}
+
+message AdResponse {
+  int64 id = 1;
+  string title = 2;
+  string text = 3;
+}
+
+message RedirectResponse {
+  LinkResponse link = 1;
+  AdResponse ad = 2;
 }
 
 message UpdateAliasRequest {

@@ -2,14 +2,17 @@ package responses
 
 import (
 	"github.com/gin-gonic/gin"
-	adProto "goads/internal/ads/proto"
-	"goads/internal/api/ads/responses"
-	shProto "goads/internal/urlshortener/proto"
+	"goads/internal/urlshortener/proto"
 )
 
+type Ad struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
 type Redirect struct {
-	URL string              `json:"url"`
-	Ad  *responses.PublicAd `json:"ad"`
+	URL string `json:"url"`
+	Ad  *Ad    `json:"ad"`
 }
 
 type Link struct {
@@ -19,21 +22,24 @@ type Link struct {
 	Ads      []int64 `json:"ads"`
 }
 
-func RedirectToResponse(l *shProto.LinkResponse, ad *adProto.AdResponse) Redirect {
-	if l == nil {
+func RedirectToResponse(r *proto.RedirectResponse) Redirect {
+	if r == nil {
 		return Redirect{}
 	}
-	if ad == nil {
-		return Redirect{URL: l.Url}
+	if r.Ad == nil || r.Ad.Title == "" && r.Ad.Text == "" {
+		return Redirect{URL: r.Link.Url}
 	}
-	resAd := responses.AdToPublicResponse(ad)
+	resAd := Ad{
+		Title: r.Ad.Title,
+		Text:  r.Ad.Text,
+	}
 	return Redirect{
-		URL: l.Url,
+		URL: r.Link.Url,
 		Ad:  &resAd,
 	}
 }
 
-func LinkToResponse(l *shProto.LinkResponse) Link {
+func LinkToResponse(l *proto.LinkResponse) Link {
 	if l == nil {
 		return Link{}
 	}
@@ -45,7 +51,7 @@ func LinkToResponse(l *shProto.LinkResponse) Link {
 	}
 }
 
-func LinksListToResponse(l *shProto.LinksListResponse) []Link {
+func LinksListToResponse(l *proto.LinksListResponse) []Link {
 	if l == nil {
 		return nil
 	}
@@ -56,21 +62,21 @@ func LinksListToResponse(l *shProto.LinksListResponse) []Link {
 	return res
 }
 
-func RedirectSuccess(l *shProto.LinkResponse, ad *adProto.AdResponse) gin.H {
+func RedirectSuccess(r *proto.RedirectResponse) gin.H {
 	return gin.H{
-		"data":  RedirectToResponse(l, ad),
+		"data":  RedirectToResponse(r),
 		"error": nil,
 	}
 }
 
-func LinksListSuccess(l *shProto.LinksListResponse) gin.H {
+func LinksListSuccess(l *proto.LinksListResponse) gin.H {
 	return gin.H{
 		"data":  LinksListToResponse(l),
 		"error": nil,
 	}
 }
 
-func LinkSuccess(l *shProto.LinkResponse) gin.H {
+func LinkSuccess(l *proto.LinkResponse) gin.H {
 	return gin.H{
 		"data":  LinkToResponse(l),
 		"error": nil,

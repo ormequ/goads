@@ -2,15 +2,14 @@ package urlshortener
 
 import (
 	"github.com/gin-gonic/gin"
-	adProto "goads/internal/ads/proto"
 	"goads/internal/api/auth"
 	"goads/internal/api/urlshortener/handlers"
 	authProto "goads/internal/auth/proto"
 	shProto "goads/internal/urlshortener/proto"
 )
 
-func SetRoutes(r gin.IRouter, authSvc authProto.AuthServiceClient, shortener shProto.ShortenerServiceClient, ads adProto.AdServiceClient) {
-	r.GET("link/:alias", handlers.GetByAlias(shortener, ads))
+func SetRoutes(r gin.IRouter, authSvc authProto.AuthServiceClient, shortener shProto.ShortenerServiceClient) {
+	r.GET("link/:alias", handlers.GetRedirect(shortener))
 
 	links := r.Group("/links")
 	links.Use(auth.Middleware(authSvc))

@@ -6,28 +6,14 @@ import (
 	"time"
 )
 
-type PublicAd struct {
-	Title string `json:"title"`
-	Text  string `json:"text"`
-}
-
 type Ad struct {
 	ID         int64     `json:"id"`
+	Title      string    `json:"title"`
+	Text       string    `json:"text"`
 	AuthorID   int64     `json:"author_id"`
 	CreateDate time.Time `json:"create_date"`
 	UpdateDate time.Time `json:"update_date"`
 	Published  bool      `json:"published"`
-	PublicAd   `json:"public"`
-}
-
-func AdToPublicResponse(a *proto.AdResponse) PublicAd {
-	if a == nil {
-		return PublicAd{}
-	}
-	return PublicAd{
-		Title: a.Title,
-		Text:  a.Text,
-	}
 }
 
 func AdToResponse(a *proto.AdResponse) Ad {
@@ -36,11 +22,12 @@ func AdToResponse(a *proto.AdResponse) Ad {
 	}
 	return Ad{
 		ID:         a.Id,
+		Title:      a.Title,
+		Text:       a.Text,
 		AuthorID:   a.AuthorId,
 		CreateDate: time.UnixMilli(a.CreateDate).UTC(),
 		UpdateDate: time.UnixMilli(a.UpdateDate).UTC(),
 		Published:  a.Published,
-		PublicAd:   AdToPublicResponse(a),
 	}
 }
 

@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"github.com/ormequ/validator"
 	"goads/internal/pkg/errwrap"
-	"goads/internal/urlshortener/links"
+	"goads/internal/urlshortener/entities/ads"
+	"goads/internal/urlshortener/entities/links"
+	"goads/internal/urlshortener/entities/redirects"
+	"math/rand"
 )
 
 //go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=Repository
@@ -26,9 +29,15 @@ type Generator interface {
 	Generate(ctx context.Context) (string, error)
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.20.0 --name=AdService
+type AdsService interface {
+	GetOnlyPublished(ctx context.Context, ids []int64) ([]ads.Ad, error)
+}
+
 type App struct {
-	repo Repository
-	gen  Generator
+	Repo Repository
+	Gen  Generator
+	Ads  AdsService
 }
 
 func (a App) generateFreeAlias(ctx context.Context) (alias string, err error) {
@@ -36,7 +45,7 @@ func (a App) generateFreeAlias(ctx context.Context) (alias string, err error) {
 
 	var getErr error = nil
 	for !errors.Is(getErr, ErrNotFound) && err == nil {
-		alias, err = a.gen.Generate(ctx)
+		alias, err = a.Gen.Generate(ctx)
 		_, getErr = a.GetByAlias(ctx, alias)
 	}
 	err = errwrap.JoinWithCaller(err, op)
@@ -59,25 +68,40 @@ func (a App) Create(ctx context.Context, url string, alias string, authorID int6
 		err = errors.Join(ErrInvalidContent, err)
 		return link, errwrap.New(err, ServiceName, op)
 	}
-	link.ID, err = a.repo.Store(ctx, link)
+	link.ID, err = a.Repo.Store(ctx, link)
 	return link, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) GetByID(ctx context.Context, id int64) (links.Link, error) {
 	const op = "app.GetByID"
-	link, err := a.repo.GetByID(ctx, id)
+	link, err := a.Repo.GetByID(ctx, id)
 	return link, errwrap.JoinWithCaller(err, op)
 }
 
 func (a App) GetByAuthor(ctx context.Context, author int64) ([]links.Link, error) {
 	const op = "app.GetByAuthor"
-	link, err := a.repo.GetByAuthor(ctx, author)
+	link, err := a.Repo.GetByAuthor(ctx, author)
 	return link, errwrap.JoinWithCaller(err, op)
 }
 
+func (a App) GetRedirect(ctx context.Context, alias string) (redirects.Redirect, error) {
+	const op = "app.GetRedirect"
+	link, err := a.GetByAlias(ctx, alias)
+	if err != nil {
+		return redirects.Redirect{}, errwrap.JoinWithCaller(err, op)
+	}
+
+	adsList, err := a.Ads.GetOnlyPublished(ctx, link.Ads)
+	var ad ads.Ad
+	if err == nil && len(adsList) > 0 {
+		ad = adsList[rand.Intn(len(adsList))]
+	}
+	return redirects.New(link, ad), nil
+}
+
 func (a App) GetByAlias(ctx context.Context, alias string) (links.Link, error) {
-	const op = "app.GetByAlias"
-	link, err := a.repo.GetByAlias(ctx, alias)
+	const op = "app.GetByAliasWithAd"
+	link, err := a.Repo.GetByAlias(ctx, alias)
 	return link, errwrap.JoinWithCaller(err, op)
 }
 
@@ -113,7 +137,7 @@ func (a App) UpdateAlias(ctx context.Context, id int64, authorID int64, alias st
 		err = errors.Join(ErrInvalidContent, err)
 		return link, errwrap.New(err, ServiceName, op).OnObject("link", id)
 	}
-	err = a.repo.UpdateAlias(ctx, id, alias)
+	err = a.Repo.UpdateAlias(ctx, id, alias)
 	if err != nil {
 		link.Alias = prev
 	}
@@ -133,7 +157,7 @@ func (a App) AddAd(ctx context.Context, linkID int64, adID int64, authorID int64
 				WithDetails(fmt.Sprintf("ad ID: %d", adID))
 		}
 	}
-	err = a.repo.AddAd(ctx, linkID, adID)
+	err = a.Repo.AddAd(ctx, linkID, adID)
 	if err == nil {
 		link.Ads = append(link.Ads, adID)
 	}
@@ -158,7 +182,7 @@ func (a App) DeleteAd(ctx context.Context, linkID int64, adID int64, authorID in
 			OnObject("link", linkID).
 			WithDetails(fmt.Sprintf("ad ID: %d", adID))
 	}
-	err = a.repo.DeleteAd(ctx, linkID, adID)
+	err = a.Repo.DeleteAd(ctx, linkID, adID)
 	if err == nil {
 		link.Ads = append(link.Ads[:adIdx], link.Ads[adIdx+1:]...)
 	}
@@ -171,12 +195,13 @@ func (a App) Delete(ctx context.Context, id int64, authorID int64) error {
 	if err != nil {
 		return errwrap.JoinWithCaller(err, op)
 	}
-	return a.repo.Delete(ctx, id)
+	return a.Repo.Delete(ctx, id)
 }
 
-func New(repo Repository, generator Generator) App {
+func New(repo Repository, generator Generator, ads AdsService) App {
 	return App{
-		repo: repo,
-		gen:  generator,
+		Repo: repo,
+		Gen:  generator,
+		Ads:  ads,
 	}
 }

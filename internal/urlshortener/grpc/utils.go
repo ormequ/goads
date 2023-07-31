@@ -4,7 +4,9 @@ import (
 	"errors"
 	"goads/internal/pkg/errwrap"
 	"goads/internal/urlshortener/app"
-	"goads/internal/urlshortener/links"
+	"goads/internal/urlshortener/entities/ads"
+	"goads/internal/urlshortener/entities/links"
+	"goads/internal/urlshortener/entities/redirects"
 	"goads/internal/urlshortener/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +49,21 @@ func linkToResponse(link links.Link) *proto.LinkResponse {
 		Alias:    link.Alias,
 		AuthorId: link.AuthorID,
 		Ads:      link.Ads,
+	}
+}
+
+func adToResponse(ad ads.Ad) *proto.AdResponse {
+	return &proto.AdResponse{
+		Id:    ad.ID,
+		Title: ad.Title,
+		Text:  ad.Text,
+	}
+}
+
+func redirectToResponse(r redirects.Redirect) *proto.RedirectResponse {
+	return &proto.RedirectResponse{
+		Link: linkToResponse(r.Link),
+		Ad:   adToResponse(r.Ad),
 	}
 }
 

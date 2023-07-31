@@ -3,40 +3,23 @@ package handlers
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	adProto "goads/internal/ads/proto"
 	"goads/internal/api/auth/utils"
 	"goads/internal/api/errors"
 	"goads/internal/api/urlshortener/responses"
-	shProto "goads/internal/urlshortener/proto"
-	"math/rand"
+	"goads/internal/urlshortener/proto"
 	"net/http"
 	"strconv"
 )
 
-func GetByAlias(shortener shProto.ShortenerServiceClient, ads adProto.AdServiceClient) gin.HandlerFunc {
+func GetRedirect(shortener proto.ShortenerServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		alias := c.Param("alias")
-		link, err := shortener.GetByAlias(c, &shProto.GetByAliasRequest{Alias: alias})
-		if err != nil {
-			c.JSON(errors.GetHTTPStatus(err), errors.HiddenResponse(err))
-			return
-		}
-		adsList, err := ads.GetOnlyPublished(c, &adProto.AdIDsRequest{Id: link.Ads})
-		if err != nil {
-			c.JSON(errors.GetHTTPStatus(err), errors.HiddenResponse(err))
-			return
-		}
-		var ad *adProto.AdResponse
-		if len(adsList.List) > 0 {
-			ad = adsList.List[rand.Intn(len(adsList.List))]
-		} else {
-			ad = nil
-		}
-		c.JSON(http.StatusOK, responses.RedirectSuccess(link, ad))
+		redirect, err := shortener.GetRedirect(c, &proto.GetByAliasRequest{Alias: alias})
+		errors.ProceedResult(c, responses.RedirectSuccess(redirect), err)
 	}
 }
 
-func GetByID(shortener shProto.ShortenerServiceClient) gin.HandlerFunc {
+func GetByID(shortener proto.ShortenerServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("link_id"))
 		if err != nil {
@@ -47,7 +30,7 @@ func GetByID(shortener shProto.ShortenerServiceClient) gin.HandlerFunc {
 			c.JSON(errors.GetHTTPStatus(err), errors.HiddenResponse(err))
 			return
 		}
-		link, err := shortener.GetByID(c, &shProto.GetByIDRequest{Id: int64(id)})
+		link, err := shortener.GetByID(c, &proto.GetByIDRequest{Id: int64(id)})
 		if link.AuthorId != userID {
 			c.JSON(http.StatusForbidden, errors.Response(fmt.Errorf("access denied")))
 		}
@@ -55,14 +38,14 @@ func GetByID(shortener shProto.ShortenerServiceClient) gin.HandlerFunc {
 	}
 }
 
-func GetByAuthor(shortener shProto.ShortenerServiceClient) gin.HandlerFunc {
+func GetByAuthor(shortener proto.ShortenerServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := utils.GetUserID(c)
 		if err != nil {
 			c.JSON(errors.GetHTTPStatus(err), errors.HiddenResponse(err))
 			return
 		}
-		links, err := shortener.GetByAuthor(c, &shProto.GetByAuthorRequest{AuthorId: id})
+		links, err := shortener.GetByAuthor(c, &proto.GetByAuthorRequest{AuthorId: id})
 		errors.ProceedResult(c, responses.LinksListSuccess(links), err)
 	}
 }

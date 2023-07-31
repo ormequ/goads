@@ -24,6 +24,7 @@ const (
 	ShortenerService_GetByID_FullMethodName     = "/urlshortener.ShortenerService/GetByID"
 	ShortenerService_GetByAuthor_FullMethodName = "/urlshortener.ShortenerService/GetByAuthor"
 	ShortenerService_GetByAlias_FullMethodName  = "/urlshortener.ShortenerService/GetByAlias"
+	ShortenerService_GetRedirect_FullMethodName = "/urlshortener.ShortenerService/GetRedirect"
 	ShortenerService_UpdateAlias_FullMethodName = "/urlshortener.ShortenerService/UpdateAlias"
 	ShortenerService_AddAd_FullMethodName       = "/urlshortener.ShortenerService/AddAd"
 	ShortenerService_DeleteAd_FullMethodName    = "/urlshortener.ShortenerService/DeleteAd"
@@ -38,6 +39,7 @@ type ShortenerServiceClient interface {
 	GetByID(ctx context.Context, in *GetByIDRequest, opts ...grpc.CallOption) (*LinkResponse, error)
 	GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*LinksListResponse, error)
 	GetByAlias(ctx context.Context, in *GetByAliasRequest, opts ...grpc.CallOption) (*LinkResponse, error)
+	GetRedirect(ctx context.Context, in *GetByAliasRequest, opts ...grpc.CallOption) (*RedirectResponse, error)
 	UpdateAlias(ctx context.Context, in *UpdateAliasRequest, opts ...grpc.CallOption) (*LinkResponse, error)
 	AddAd(ctx context.Context, in *LinkAdRequest, opts ...grpc.CallOption) (*LinkResponse, error)
 	DeleteAd(ctx context.Context, in *LinkAdRequest, opts ...grpc.CallOption) (*LinkResponse, error)
@@ -88,6 +90,15 @@ func (c *shortenerServiceClient) GetByAlias(ctx context.Context, in *GetByAliasR
 	return out, nil
 }
 
+func (c *shortenerServiceClient) GetRedirect(ctx context.Context, in *GetByAliasRequest, opts ...grpc.CallOption) (*RedirectResponse, error) {
+	out := new(RedirectResponse)
+	err := c.cc.Invoke(ctx, ShortenerService_GetRedirect_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *shortenerServiceClient) UpdateAlias(ctx context.Context, in *UpdateAliasRequest, opts ...grpc.CallOption) (*LinkResponse, error) {
 	out := new(LinkResponse)
 	err := c.cc.Invoke(ctx, ShortenerService_UpdateAlias_FullMethodName, in, out, opts...)
@@ -132,6 +143,7 @@ type ShortenerServiceServer interface {
 	GetByID(context.Context, *GetByIDRequest) (*LinkResponse, error)
 	GetByAuthor(context.Context, *GetByAuthorRequest) (*LinksListResponse, error)
 	GetByAlias(context.Context, *GetByAliasRequest) (*LinkResponse, error)
+	GetRedirect(context.Context, *GetByAliasRequest) (*RedirectResponse, error)
 	UpdateAlias(context.Context, *UpdateAliasRequest) (*LinkResponse, error)
 	AddAd(context.Context, *LinkAdRequest) (*LinkResponse, error)
 	DeleteAd(context.Context, *LinkAdRequest) (*LinkResponse, error)
@@ -153,6 +165,9 @@ func (UnimplementedShortenerServiceServer) GetByAuthor(context.Context, *GetByAu
 }
 func (UnimplementedShortenerServiceServer) GetByAlias(context.Context, *GetByAliasRequest) (*LinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByAlias not implemented")
+}
+func (UnimplementedShortenerServiceServer) GetRedirect(context.Context, *GetByAliasRequest) (*RedirectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRedirect not implemented")
 }
 func (UnimplementedShortenerServiceServer) UpdateAlias(context.Context, *UpdateAliasRequest) (*LinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAlias not implemented")
@@ -246,6 +261,24 @@ func _ShortenerService_GetByAlias_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ShortenerServiceServer).GetByAlias(ctx, req.(*GetByAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ShortenerService_GetRedirect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetByAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShortenerServiceServer).GetRedirect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShortenerService_GetRedirect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShortenerServiceServer).GetRedirect(ctx, req.(*GetByAliasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -344,6 +377,10 @@ var ShortenerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetByAlias",
 			Handler:    _ShortenerService_GetByAlias_Handler,
+		},
+		{
+			MethodName: "GetRedirect",
+			Handler:    _ShortenerService_GetRedirect_Handler,
 		},
 		{
 			MethodName: "UpdateAlias",

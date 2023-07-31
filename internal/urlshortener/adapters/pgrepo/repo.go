@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"goads/internal/pkg/errwrap"
 	"goads/internal/urlshortener/app"
-	"goads/internal/urlshortener/links"
+	"goads/internal/urlshortener/entities/links"
 )
 
 type Repo struct {
@@ -206,7 +206,7 @@ func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, er
 
 func (r Repo) GetByAlias(ctx context.Context, alias string) (links.Link, error) {
 	const query = `SELECT id, url, author_id FROM links WHERE alias=$1`
-	const op = "pgrepo.GetByAlias"
+	const op = "pgrepo.GetByAliasWithAd"
 
 	link := links.Link{Alias: alias}
 	err := r.links.QueryRow(ctx, query, alias).Scan(&link.ID, &link.URL, &link.AuthorID)

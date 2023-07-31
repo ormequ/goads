@@ -38,7 +38,7 @@ services:
     networks:
       - default
     env_file:
-      - config/services.env
+      - config.env
   auth:
     build:
       dockerfile: docker/auth/Dockerfile
@@ -53,7 +53,7 @@ services:
     networks:
       - default
     env_file:
-      - config/services.env
+      - config.env
     volumes:
       - ./cert:/app/cert
   url_shortener:
@@ -63,6 +63,7 @@ services:
     depends_on:
       - postgres
       - migrate
+      - ads
     links:
       - postgres
     ports:
@@ -70,7 +71,7 @@ services:
     networks:
       - default
     env_file:
-      - config/services.env
+      - config.env
   api:
     build:
       dockerfile: docker/api/Dockerfile
@@ -86,9 +87,9 @@ services:
     networks:
       - default
     ports:
-      - "80:80"
+      - "80:8000"
     env_file:
-      - config/api.env
+      - config.env
 
 networks:
   default:

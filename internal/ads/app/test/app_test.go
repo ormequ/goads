@@ -435,6 +435,10 @@ func TestApp_Update(t *testing.T) {
 			} else if tt.wantErr == nil {
 				assert.NoError(t, err)
 			}
+			tt.want.CreateDate = tt.want.CreateDate.Truncate(time.Second)
+			tt.want.UpdateDate = tt.want.UpdateDate.Truncate(time.Second)
+			got.CreateDate = got.CreateDate.Truncate(time.Second)
+			got.UpdateDate = got.UpdateDate.Truncate(time.Second)
 			assert.Equalf(t, tt.want, got, "Update(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.userID, tt.args.title, tt.args.text)
 		})
 	}

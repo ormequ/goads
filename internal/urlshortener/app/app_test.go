@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"goads/internal/urlshortener/app/mocks"
-	"goads/internal/urlshortener/links"
+	"goads/internal/urlshortener/entities/links"
 	"testing"
 )
 
@@ -240,8 +240,8 @@ func TestApp_AddAd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := App{
-				repo: tt.fields.repo,
-				gen:  tt.fields.gen,
+				Repo: tt.fields.repo,
+				Gen:  tt.fields.gen,
 			}
 			got, err := a.AddAd(tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("AddAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)) {
@@ -355,8 +355,8 @@ func TestApp_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := App{
-				repo: tt.fields.repo,
-				gen:  tt.fields.gen,
+				Repo: tt.fields.repo,
+				Gen:  tt.fields.gen,
 			}
 			got, err := a.Create(tt.args.ctx, tt.args.url, tt.args.alias, tt.args.authorID, tt.args.ads)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("Create(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.url, tt.args.alias, tt.args.authorID, tt.args.ads)) {
@@ -491,8 +491,8 @@ func TestApp_DeleteAd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := App{
-				repo: tt.fields.repo,
-				gen:  tt.fields.gen,
+				Repo: tt.fields.repo,
+				Gen:  tt.fields.gen,
 			}
 			got, err := a.DeleteAd(tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("DeleteAd(%v, %v, %v, %v)", tt.args.ctx, tt.args.linkID, tt.args.adID, tt.args.authorID)) {
@@ -614,8 +614,8 @@ func TestApp_UpdateAlias(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := App{
-				repo: tt.fields.repo,
-				gen:  tt.fields.gen,
+				Repo: tt.fields.repo,
+				Gen:  tt.fields.gen,
 			}
 			got, err := a.UpdateAlias(tt.args.ctx, tt.args.id, tt.args.authorID, tt.args.alias)
 			if tt.wantErr != nil && !tt.wantErr(t, err, fmt.Sprintf("UpdateAlias(%v, %v, %v, %v)", tt.args.ctx, tt.args.id, tt.args.authorID, tt.args.alias)) {

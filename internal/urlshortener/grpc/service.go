@@ -2,7 +2,8 @@ package grpc
 
 import (
 	"context"
-	"goads/internal/urlshortener/links"
+	"goads/internal/urlshortener/entities/links"
+	"goads/internal/urlshortener/entities/redirects"
 	"goads/internal/urlshortener/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -12,6 +13,7 @@ type App interface {
 	GetByID(ctx context.Context, id int64) (links.Link, error)
 	GetByAuthor(ctx context.Context, author int64) ([]links.Link, error)
 	GetByAlias(ctx context.Context, alias string) (links.Link, error)
+	GetRedirect(ctx context.Context, alias string) (redirects.Redirect, error)
 	UpdateAlias(ctx context.Context, id int64, authorID int64, alias string) (links.Link, error)
 	AddAd(ctx context.Context, linkID int64, adID int64, authorID int64) (links.Link, error)
 	DeleteAd(ctx context.Context, linkID int64, adID int64, authorID int64) (links.Link, error)
@@ -40,6 +42,11 @@ func (s Service) GetByAuthor(ctx context.Context, request *proto.GetByAuthorRequ
 func (s Service) GetByAlias(ctx context.Context, request *proto.GetByAliasRequest) (*proto.LinkResponse, error) {
 	link, err := s.app.GetByAlias(ctx, request.Alias)
 	return linkToResponse(link), getErrorStatus(err)
+}
+
+func (s Service) GetRedirect(ctx context.Context, request *proto.GetByAliasRequest) (*proto.RedirectResponse, error) {
+	redirect, err := s.app.GetRedirect(ctx, request.Alias)
+	return redirectToResponse(redirect), getErrorStatus(err)
 }
 
 func (s Service) UpdateAlias(ctx context.Context, request *proto.UpdateAliasRequest) (*proto.LinkResponse, error) {
