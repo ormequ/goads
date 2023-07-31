@@ -2,7 +2,6 @@ package errors
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,7 +34,6 @@ func GetHTTPStatus(err error) int {
 }
 
 func HiddenResponse(err error) gin.H {
-	fmt.Println("ERROR HANDLED", err)
 	if GetHTTPStatus(err) == http.StatusInternalServerError {
 		err = errors.New("internal server error")
 	}

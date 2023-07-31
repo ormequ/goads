@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"goads/internal/ads/adapters/pgrepo"
 	"goads/internal/ads/app"
@@ -11,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -24,6 +26,11 @@ func main() {
 	eg, ctx := errgroup.WithContext(context.Background())
 
 	conn, err := pgx.Connect(ctx, cfg.PostgresConn)
+	for i := 0; i < 5 && err != nil; i++ {
+		time.Sleep(time.Second * 3)
+		fmt.Printf("Reconnect to PostgreSQL #%d\n", i+1)
+		conn, err = pgx.Connect(ctx, cfg.PostgresConn)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

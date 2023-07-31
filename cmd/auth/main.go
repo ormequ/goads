@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"goads/internal/auth/adapters/bcrypt"
 	"goads/internal/auth/adapters/jwt"
 	"goads/internal/auth/adapters/pgrepo"
@@ -49,6 +50,11 @@ func main() {
 	eg, ctx := errgroup.WithContext(context.Background())
 
 	conn, err := pgx.Connect(ctx, cfg.PostgresConn)
+	for i := 0; i < 5 && err != nil; i++ {
+		time.Sleep(time.Second * 3)
+		fmt.Printf("Reconnect to PostgreSQL #%d", i+1)
+		conn, err = pgx.Connect(ctx, cfg.PostgresConn)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

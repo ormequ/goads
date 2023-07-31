@@ -8,11 +8,13 @@ services:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "root"
       POSTGRES_DB: "goads"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
     ports:
       - "5433:5432"
     networks:
       - default
-      # todo add storing data volume
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   migrate:
     image: migrate/migrate
     links:
@@ -87,3 +89,7 @@ services:
 
 networks:
   default:
+
+volumes:
+  pgdata:
+

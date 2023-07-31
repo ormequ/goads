@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	adProto "goads/internal/ads/proto"
 	"goads/internal/pkg/config"
 	"goads/internal/pkg/shutdown"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -31,17 +33,26 @@ func main() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
-	adsConn, err := grpc.DialContext(ctx, cfg.AdsPath, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Cannot start connection with Ads: %v", err)
-	}
-	adsSvc := adProto.NewAdServiceClient(adsConn)
-
 	conn, err := pgx.Connect(ctx, cfg.PostgresConn)
+	for i := 0; i < 5 && err != nil; i++ {
+		time.Sleep(time.Second * 3)
+		fmt.Printf("Reconnect to PostgreSQL #%d", i+1)
+		conn, err = pgx.Connect(ctx, cfg.PostgresConn)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() { _ = conn.Close(ctx) }()
+	adsConn, err := grpc.DialContext(ctx, cfg.AdsPath, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	for i := 0; i < 10 && err != nil; i++ {
+		time.Sleep(time.Second * 3)
+		fmt.Printf("Reconnect to Ads #%d", i+1)
+		adsConn, err = grpc.DialContext(ctx, cfg.AdsPath, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+	if err != nil {
+		log.Fatalf("Cannot start connection with Ads: %v", err)
+	}
+	adsSvc := adProto.NewAdServiceClient(adsConn)
 
 	repo := pgrepo.New(conn, conn)
 	a := app.New(repo, generator.New(repo), ads.New(adsSvc))

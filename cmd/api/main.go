@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	adProto "goads/internal/ads/proto"
 	"goads/internal/api/server"
 	authProto "goads/internal/auth/proto"
@@ -13,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -25,6 +27,11 @@ type Config struct {
 
 func connect(ctx context.Context, name string, path string) *grpc.ClientConn {
 	conn, err := grpc.DialContext(ctx, path, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	for i := 0; i < 10 && err != nil; i++ {
+		conn, err = grpc.DialContext(ctx, path, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		fmt.Printf("Reconnect to %s #%d", name, i+1)
+		time.Sleep(time.Second * 3)
+	}
 	if err != nil {
 		log.Fatalf("Cannot start connection with %s: %v", name, err)
 	}

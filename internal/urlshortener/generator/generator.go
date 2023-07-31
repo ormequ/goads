@@ -2,7 +2,6 @@ package generator
 
 import (
 	"context"
-	"fmt"
 	"goads/internal/pkg/errwrap"
 	"math"
 	"math/rand"
@@ -32,7 +31,6 @@ func (g Generator) Generate(ctx context.Context) (string, error) {
 	}
 	deg := math.Log(float64(sz)) / math.Log(float64(len(symbols)))
 	l := int(math.Max(4, deg))
-	fmt.Println(deg, l, sz)
 	res := make([]byte, l)
 	for i := range res {
 		res[i] = symbols[rand.Intn(len(symbols))]

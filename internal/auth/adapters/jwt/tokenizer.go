@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"goads/internal/auth/app"
 	"goads/internal/pkg/errwrap"
@@ -43,7 +42,6 @@ func NewTokenizer(expires time.Duration, privateKey []byte) (Tokenizer, error) {
 	const op = "jwt.NewTokenizer"
 
 	block, _ := pem.Decode(privateKey)
-	fmt.Println(block)
 	k, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return Tokenizer{}, errwrap.New(err, app.ServiceName, op)
