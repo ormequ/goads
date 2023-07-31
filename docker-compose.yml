@@ -55,7 +55,7 @@ services:
     env_file:
       - config/services.env
     volumes:
-      - ./cert:/build/cert
+      - ./cert:/app/cert
   url_shortener:
     build:
       dockerfile: docker/urlshortener/Dockerfile

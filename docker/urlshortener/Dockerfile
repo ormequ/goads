@@ -12,9 +12,9 @@ RUN go build -o urlshortener cmd/urlshortener/main.go
 
 FROM alpine
 
-WORKDIR /build
+WORKDIR /app
 
-COPY --from=builder /build/urlshortener /build/urlshortener
+COPY --from=builder /build/urlshortener /app/urlshortener
 
 ENV CONFIG_PATH ""
 ENV GRPC_PORT 8000

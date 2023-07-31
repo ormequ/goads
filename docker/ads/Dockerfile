@@ -12,9 +12,9 @@ RUN go build -o ads cmd/ads/main.go
 
 FROM alpine
 
-WORKDIR /build
+WORKDIR /app
 
-COPY --from=builder /build/ads /build/ads
+COPY --from=builder /build/ads /app/ads
 
 ENV CONFIG_PATH ""
 ENV GRPC_PORT 8000

@@ -12,9 +12,9 @@ RUN go build -o api cmd/api/main.go
 
 FROM alpine
 
-WORKDIR /build
+WORKDIR /app
 
-COPY --from=builder /build/api /build/api
+COPY --from=builder /build/api /app/api
 
 ENV CONFIG_PATH ""
 ENV GRPC_PORT 80

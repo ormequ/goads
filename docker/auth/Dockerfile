@@ -12,9 +12,9 @@ RUN go build -o auth cmd/auth/main.go
 
 FROM alpine
 
-WORKDIR /build
+WORKDIR /app
 
-COPY --from=builder /build/auth /build/auth
+COPY --from=builder /build/auth /app/auth
 
 ENV CONFIG_PATH ""
 ENV GRPC_PORT 8000
