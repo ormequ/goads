@@ -19,6 +19,9 @@ func LogUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryS
 }
 
 func recoveryHandler(p any) error {
+	log.Printf(
+		"%v [RECOVERY] %v\n", time.Now().Format("2006/01/02 15:04:05"), p,
+	)
 	return status.Errorf(codes.Internal, "%v [RECOVERY] %v\n", time.Now().Format("2006/01/02 15:04:05"), p)
 }
 

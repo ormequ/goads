@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"goads/internal/pkg/errwrap"
 	"goads/internal/urlshortener/app"
 	"goads/internal/urlshortener/entities/links"
+	"sort"
 )
 
 type Repo struct {
-	links *pgx.Conn
-	ads   *pgx.Conn
+	db *pgx.Conn
 }
 
 const (
@@ -22,11 +23,11 @@ const (
 )
 
 func (r Repo) SizeApprox(ctx context.Context) (int64, error) {
-	const query = `SELECT reltuples::bigint FROM pg_catalog.pg_class WHERE relname = 'links'`
+	const query = `SELECT reltuples::bigint FROM pg_catalog.pg_class WHERE relname = 'db'`
 	const op = "pgrepo.SizeApprox"
 
 	var sz int64 = -1
-	err := r.links.QueryRow(ctx, query).Scan(&sz)
+	err := r.db.QueryRow(ctx, query).Scan(&sz)
 	if err != nil {
 		err = errwrap.New(err, app.ServiceName, op)
 	}
@@ -39,7 +40,7 @@ func (r Repo) Store(ctx context.Context, link links.Link) (id int64, err error) 
 	const op = "pgrepo.Store"
 
 	id = -1
-	err = r.links.QueryRow(ctx, linksQuery, link.Alias, link.URL, link.AuthorID).Scan(&id)
+	err = r.db.QueryRow(ctx, linksQuery, link.Alias, link.URL, link.AuthorID).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.ConstraintName == constrAlias {
@@ -58,7 +59,7 @@ func (r Repo) Store(ctx context.Context, link links.Link) (id int64, err error) 
 	for _, adID := range link.Ads {
 		batchAds.Queue(adsQuery, id, adID)
 	}
-	br := r.ads.SendBatch(ctx, batchAds)
+	br := r.db.SendBatch(ctx, batchAds)
 	defer func() {
 		if err != nil {
 			err = errors.Join(err, br.Close())
@@ -78,41 +79,36 @@ func (r Repo) Store(ctx context.Context, link links.Link) (id int64, err error) 
 	return
 }
 
-func (r Repo) getAdsByLink(ctx context.Context, linkID int64) ([]int64, error) {
-	const query = `SELECT ad_id FROM link_ads WHERE link_id=$1`
-	const op = "pgrepo.getAdsByLink"
-
-	rows, err := r.ads.Query(ctx, query, linkID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = errwrap.New(app.ErrNoAds, app.ServiceName, op).
-				WithDetails(err.Error()).
-				OnObject("link", linkID)
-		} else {
-			err = errwrap.New(err, app.ServiceName, op).
-				OnObject("link", linkID)
-		}
-		return nil, err
+func pgArrayToGoSlice(arr pgtype.Array[pgtype.Int8]) []int64 {
+	if !arr.Valid {
+		return nil
 	}
-	var res []int64
-	for rows.Next() {
-		var id int64
-		err := rows.Scan(&id)
-		if err != nil {
-			return res, errwrap.New(err, app.ServiceName, op).
-				OnObject("link", linkID)
+	res := make([]int64, 0, len(arr.Elements))
+	for i := range arr.Elements {
+		if arr.Elements[i].Valid {
+			res = append(res, arr.Elements[i].Int64)
 		}
-		res = append(res, id)
 	}
-	return res, nil
+	sort.Slice(res, func(i, j int) bool {
+		return res[i] < res[j]
+	})
+	return res
 }
 
 func (r Repo) GetByID(ctx context.Context, id int64) (links.Link, error) {
-	const query = `SELECT alias, url, author_id FROM links WHERE id=$1`
+	const query = `
+		SELECT links.id, alias, url, author_id, array_agg(la.ad_id)
+		FROM links
+        	LEFT JOIN link_ads la on links.id = la.link_id 
+		WHERE links.id=$1
+		GROUP BY links.id;
+	`
 	const op = "pgrepo.GetByID"
 
-	link := links.Link{ID: id}
-	err := r.links.QueryRow(ctx, query, id).Scan(&link.Alias, &link.URL, &link.AuthorID)
+	link := links.Link{}
+	var ads pgtype.Array[pgtype.Int8]
+
+	err := r.db.QueryRow(ctx, query, id).Scan(&link.ID, &link.Alias, &link.URL, &link.AuthorID, &ads)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrNotFound, app.ServiceName, op).
@@ -124,49 +120,21 @@ func (r Repo) GetByID(ctx context.Context, id int64) (links.Link, error) {
 		}
 		return link, err
 	}
-
-	link.Ads, err = r.getAdsByLink(ctx, link.ID)
-	return link, errwrap.JoinWithCaller(err, op)
-}
-
-func (r Repo) getAdsByLinks(ctx context.Context, ids []int64) (res map[int64][]int64, err error) {
-	const query = `SELECT link_id, ad_id FROM link_ads WHERE link_id = ANY($1)`
-	const op = "pgrepo.getAdsByLinks"
-
-	rows, err := r.ads.Query(ctx, query, ids)
-
-	defer func() {
-		if err != nil {
-			err = errors.Join(err, fmt.Errorf("given links: %v", ids))
-		}
-	}()
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = errwrap.New(app.ErrNoAds, app.ServiceName, op).WithDetails(err.Error())
-		} else {
-			err = errwrap.New(err, app.ServiceName, op)
-		}
-		return
-	}
-
-	res = make(map[int64][]int64)
-	for rows.Next() {
-		var link, ad int64
-		err = rows.Scan(&link, &ad)
-		if err != nil {
-			err = errwrap.New(err, app.ServiceName, op)
-			return
-		}
-		res[link] = append(res[link], ad)
-	}
-	return
+	link.Ads = pgArrayToGoSlice(ads)
+	return link, nil
 }
 
 func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, error) {
-	const query = `SELECT id, alias, url FROM links WHERE author_id=$1`
+	const query = `
+		SELECT id, alias, url, array_agg(la.ad_id) 
+		FROM links 
+			LEFT JOIN link_ads la on links.id=la.link_id 
+		WHERE links.author_id=$1
+		GROUP BY links.id
+	`
 	const op = "pgrepo.GetByAuthor"
 
-	rows, err := r.links.Query(ctx, query, authorID)
+	rows, err := r.db.Query(ctx, query, authorID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrNotFound, app.ServiceName, op).
@@ -177,39 +145,32 @@ func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, er
 		}
 		return nil, err
 	}
-	lMap := make(map[int64]links.Link)
-	var lIDs []int64
+	var res []links.Link
 	for rows.Next() {
 		link := links.Link{AuthorID: authorID}
-		err := rows.Scan(&link.ID, &link.Alias, &link.URL)
+		var ads pgtype.Array[pgtype.Int8]
+		err := rows.Scan(&link.ID, &link.Alias, &link.URL, &ads)
 		if err != nil {
-			return nil, errwrap.New(err, app.ServiceName, op)
+			return res, errwrap.New(err, app.ServiceName, op)
 		}
-		lMap[link.ID] = link
-		lIDs = append(lIDs, link.ID)
-	}
-
-	ads, err := r.getAdsByLinks(ctx, lIDs)
-	if err != nil {
-		return nil, errwrap.JoinWithCaller(err, op)
-	}
-
-	var res []links.Link
-	for id, link := range lMap {
-		if ads != nil {
-			link.Ads = ads[id]
-		}
+		link.Ads = pgArrayToGoSlice(ads)
 		res = append(res, link)
 	}
 	return res, nil
 }
 
 func (r Repo) GetByAlias(ctx context.Context, alias string) (links.Link, error) {
-	const query = `SELECT id, url, author_id FROM links WHERE alias=$1`
-	const op = "pgrepo.GetByAliasWithAd"
+	const query = `SELECT links.id, url, author_id, array_agg(la.ad_id)
+		FROM links
+				 LEFT JOIN link_ads la on links.id = la.link_id
+		WHERE links.alias = $1
+		GROUP BY links.id
+	`
+	const op = "pgrepo.GetByAlias"
 
 	link := links.Link{Alias: alias}
-	err := r.links.QueryRow(ctx, query, alias).Scan(&link.ID, &link.URL, &link.AuthorID)
+	var ads pgtype.Array[pgtype.Int8]
+	err := r.db.QueryRow(ctx, query, alias).Scan(&link.ID, &link.URL, &link.AuthorID, &ads)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrNotFound, app.ServiceName, op).
@@ -220,16 +181,15 @@ func (r Repo) GetByAlias(ctx context.Context, alias string) (links.Link, error) 
 		}
 		return link, err
 	}
-
-	link.Ads, err = r.getAdsByLink(ctx, link.ID)
-	return link, errwrap.JoinWithCaller(err, op)
+	link.Ads = pgArrayToGoSlice(ads)
+	return link, nil
 }
 
 func (r Repo) UpdateAlias(ctx context.Context, id int64, alias string) error {
 	const query = `UPDATE links SET alias=$1 WHERE id=$2`
 	const op = "pgrepo.UpdateAlias"
 
-	_, err := r.links.Exec(ctx, query, alias, id)
+	_, err := r.db.Exec(ctx, query, alias, id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = errwrap.New(app.ErrNotFound, app.ServiceName, op).OnObject("link", id).WithDetails(err.Error())
 	} else if err != nil {
@@ -242,7 +202,7 @@ func (r Repo) AddAd(ctx context.Context, linkID int64, adID int64) error {
 	const query = `INSERT INTO link_ads (link_id, ad_id) VALUES ($1, $2)`
 	const op = "pgrepo.AddAd"
 
-	_, err := r.links.Exec(ctx, query, linkID, adID)
+	_, err := r.db.Exec(ctx, query, linkID, adID)
 	if err != nil {
 		err = errwrap.New(err, app.ServiceName, op).OnObject("link", linkID).
 			WithDetails(fmt.Sprintf("ad ID: %d", adID))
@@ -254,7 +214,7 @@ func (r Repo) DeleteAd(ctx context.Context, linkID int64, adID int64) error {
 	const query = `DELETE FROM link_ads WHERE link_id=$1 AND ad_id=$2`
 	const op = "pgrepo.DeleteAd"
 
-	_, err := r.links.Exec(ctx, query, linkID, adID)
+	_, err := r.db.Exec(ctx, query, linkID, adID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = errwrap.New(app.ErrNotFound, app.ServiceName, op).OnObject("link", linkID).
 			WithDetails(fmt.Sprintf("%v | ad ID: %d", err, adID))
@@ -267,27 +227,11 @@ func (r Repo) DeleteAd(ctx context.Context, linkID int64, adID int64) error {
 
 func (r Repo) Delete(ctx context.Context, id int64) error {
 	const linksQuery = `DELETE FROM links WHERE id=$1`
-	const adsQuery = `DELETE FROM link_ads WHERE link_id=$1`
 	const op = "pgrepo.Delete"
 
-	_, err := r.links.Exec(ctx, linksQuery, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = errwrap.New(app.ErrNotFound, app.ServiceName, op).
-				OnObject("link", id).
-				WithDetails(err.Error())
-		} else {
-			err = errwrap.New(err, app.ServiceName, op).
-				OnObject("link", id)
-		}
-		return err
-	}
-	_, err = r.ads.Exec(ctx, adsQuery, id)
+	_, err := r.db.Exec(ctx, linksQuery, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		err = errors.Join(err, app.ErrNoAds)
-	}
-	if errors.Is(err, pgx.ErrNoRows) {
-		err = errwrap.New(app.ErrNoAds, app.ServiceName, op).
+		err = errwrap.New(app.ErrNotFound, app.ServiceName, op).
 			OnObject("link", id).
 			WithDetails(err.Error())
 	} else if err != nil {
@@ -297,6 +241,6 @@ func (r Repo) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
-func New(links *pgx.Conn, ads *pgx.Conn) Repo {
-	return Repo{links, ads}
+func New(db *pgx.Conn) Repo {
+	return Repo{db}
 }

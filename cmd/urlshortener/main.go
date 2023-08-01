@@ -54,7 +54,7 @@ func main() {
 	}
 	adsSvc := adProto.NewAdServiceClient(adsConn)
 
-	repo := pgrepo.New(conn, conn)
+	repo := pgrepo.New(conn)
 	a := app.New(repo, generator.New(repo), ads.New(adsSvc))
 
 	grpcServer := grpcPort.NewServer(cfg.GRPCAddress, a)
