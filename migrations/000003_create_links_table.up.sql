@@ -1,6 +1,6 @@
 CREATE TABLE links
 (
-    id        SERIAL PRIMARY KEY,
+    id        BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     alias     TEXT
         CONSTRAINT links_alias_key UNIQUE NOT NULL,
     url       TEXT                        NOT NULL,

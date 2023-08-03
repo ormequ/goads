@@ -1,6 +1,6 @@
 CREATE TABLE users
 (
-    id    SERIAL PRIMARY KEY,
+    id    BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     email TEXT
         CONSTRAINT users_email_key UNIQUE NOT NULL,
     name  TEXT NOT NULL,

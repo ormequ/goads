@@ -1,6 +1,6 @@
 CREATE TABLE ads
 (
-    id          SERIAL PRIMARY KEY,
+    id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     author_id   BIGINT
         CONSTRAINT ads_author_id_key NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     published   BOOL,
