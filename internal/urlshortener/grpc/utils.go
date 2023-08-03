@@ -18,7 +18,7 @@ func getErrorStatus(err error) error {
 	}
 	code := codes.Internal
 	var wrap *errwrap.Error
-	if errors.As(err, wrap) {
+	if errors.As(err, &wrap) {
 		err = wrap.Unwrap() // hiding error information
 	}
 	if errors.Is(err, app.ErrNoAds) {

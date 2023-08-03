@@ -44,6 +44,12 @@ func TokenSuccess(t *proto.TokenResponse) gin.H {
 }
 
 func UserWithTokenSuccess(reg *proto.RegisterResponse) gin.H {
+	if reg == nil {
+		return gin.H{
+			"data":  nil,
+			"error": nil,
+		}
+	}
 	return gin.H{
 		"data": gin.H{
 			"User":  UserToResponse(reg.User),

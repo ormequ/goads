@@ -28,6 +28,9 @@ func (r Repo) SizeApprox(ctx context.Context) (int64, error) {
 
 	var sz int64 = -1
 	err := r.db.QueryRow(ctx, query).Scan(&sz)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
 	if err != nil {
 		err = errwrap.New(err, app.ServiceName, op)
 	}
@@ -97,7 +100,7 @@ func pgArrayToGoSlice(arr pgtype.Array[pgtype.Int8]) []int64 {
 
 func (r Repo) GetByID(ctx context.Context, id int64) (links.Link, error) {
 	const query = `
-		SELECT links.id, alias, url, author_id, array_agg(la.ad_id)
+		SELECT links.id, alias, url, author_id, ARRAY_AGG(la.ad_id ORDER BY la.ad_id)
 		FROM links
         	LEFT JOIN link_ads la on links.id = la.link_id 
 		WHERE links.id=$1
@@ -126,7 +129,7 @@ func (r Repo) GetByID(ctx context.Context, id int64) (links.Link, error) {
 
 func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, error) {
 	const query = `
-		SELECT id, alias, url, array_agg(la.ad_id) 
+		SELECT id, alias, url, ARRAY_AGG(la.ad_id ORDER BY la.ad_id)
 		FROM links 
 			LEFT JOIN link_ads la on links.id=la.link_id 
 		WHERE links.author_id=$1
@@ -160,7 +163,7 @@ func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, er
 }
 
 func (r Repo) GetByAlias(ctx context.Context, alias string) (links.Link, error) {
-	const query = `SELECT links.id, url, author_id, array_agg(la.ad_id)
+	const query = `SELECT links.id, url, author_id, ARRAY_AGG(la.ad_id ORDER BY la.ad_id)
 		FROM links
 				 LEFT JOIN link_ads la on links.id = la.link_id
 		WHERE links.alias = $1
