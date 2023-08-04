@@ -34,7 +34,7 @@ func (s Service) GetByID(ctx context.Context, request *proto.GetByIDRequest) (*p
 	return linkToResponse(link), getErrorStatus(err)
 }
 
-func (s Service) GetByAuthor(ctx context.Context, request *proto.GetByAuthorRequest) (*proto.LinksListResponse, error) {
+func (s Service) GetByAuthor(ctx context.Context, request *proto.GetByAuthorRequest) (*proto.LinksResponse, error) {
 	list, err := s.app.GetByAuthor(ctx, request.AuthorId)
 	return listLinkToResponse(list), getErrorStatus(err)
 }

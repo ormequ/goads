@@ -38,7 +38,7 @@ func AdSuccess(a *proto.AdResponse) gin.H {
 	}
 }
 
-func AdsListSuccess(l *proto.ListAdResponse) gin.H {
+func AdsSuccess(l *proto.AdsResponse) gin.H {
 	responses := make([]Ad, len(l.List))
 	for i, ad := range l.List {
 		responses[i] = AdToResponse(ad)

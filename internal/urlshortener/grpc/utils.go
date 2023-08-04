@@ -67,8 +67,8 @@ func redirectToResponse(r redirects.Redirect) *proto.RedirectResponse {
 	}
 }
 
-func listLinkToResponse(list []links.Link) *proto.LinksListResponse {
-	res := proto.LinksListResponse{
+func listLinkToResponse(list []links.Link) *proto.LinksResponse {
+	res := proto.LinksResponse{
 		List: make([]*proto.LinkResponse, len(list)),
 	}
 	for i := range list {

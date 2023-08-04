@@ -34,6 +34,6 @@ func GetFiltered(client proto.AdServiceClient) gin.HandlerFunc {
 			return
 		}
 		adsList, err := client.Filter(c, filter)
-		errors.ProceedResult(c, responses.AdsListSuccess(adsList), err)
+		errors.ProceedResult(c, responses.AdsSuccess(adsList), err)
 	}
 }

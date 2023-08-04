@@ -46,6 +46,6 @@ func GetByAuthor(shortener proto.ShortenerServiceClient) gin.HandlerFunc {
 			return
 		}
 		links, err := shortener.GetByAuthor(c, &proto.GetByAuthorRequest{AuthorId: id})
-		errors.ProceedResult(c, responses.LinksListSuccess(links), err)
+		errors.ProceedResult(c, responses.LinksSuccess(links), err)
 	}
 }

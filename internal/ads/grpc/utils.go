@@ -47,8 +47,8 @@ func adToResponse(ad ads.Ad) *proto.AdResponse {
 	}
 }
 
-func adsListToResponse(list []ads.Ad) *proto.ListAdResponse {
-	res := proto.ListAdResponse{
+func adsToResponse(list []ads.Ad) *proto.AdsResponse {
+	res := proto.AdsResponse{
 		List: make([]*proto.AdResponse, len(list)),
 	}
 	for i := range list {

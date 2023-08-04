@@ -24,9 +24,9 @@ type Service struct {
 	app App
 }
 
-func (s Service) GetOnlyPublished(ctx context.Context, request *proto.AdIDsRequest) (*proto.ListAdResponse, error) {
+func (s Service) GetOnlyPublished(ctx context.Context, request *proto.AdIDsRequest) (*proto.AdsResponse, error) {
 	list, err := s.app.GetOnlyPublished(ctx, request.Id)
-	return adsListToResponse(list), getErrorStatus(err)
+	return adsToResponse(list), getErrorStatus(err)
 }
 
 func (s Service) Create(ctx context.Context, request *proto.CreateAdRequest) (*proto.AdResponse, error) {
@@ -44,14 +44,14 @@ func (s Service) Update(ctx context.Context, request *proto.UpdateAdRequest) (*p
 	return adToResponse(ad), getErrorStatus(err)
 }
 
-func (s Service) Filter(ctx context.Context, request *proto.FilterAdsRequest) (*proto.ListAdResponse, error) {
+func (s Service) Filter(ctx context.Context, request *proto.FilterAdsRequest) (*proto.AdsResponse, error) {
 	list, err := s.app.GetFiltered(ctx, app.Filter{
 		AuthorID: request.AuthorId,
 		Date:     time.UnixMilli(request.Date).UTC(),
 		All:      request.All,
 		Title:    request.Title,
 	})
-	return adsListToResponse(list), getErrorStatus(err)
+	return adsToResponse(list), getErrorStatus(err)
 }
 
 func (s Service) GetByID(ctx context.Context, request *proto.GetAdByIDRequest) (*proto.AdResponse, error) {

@@ -8,9 +8,9 @@ service AdService {
   rpc Create(CreateAdRequest) returns (AdResponse) {}
   rpc ChangeStatus(ChangeAdStatusRequest) returns (AdResponse) {}
   rpc Update(UpdateAdRequest) returns (AdResponse) {}
-  rpc Filter(FilterAdsRequest) returns (ListAdResponse) {}
+  rpc Filter(FilterAdsRequest) returns (AdsResponse) {}
   rpc GetByID(GetAdByIDRequest) returns (AdResponse) {}
-  rpc GetOnlyPublished(AdIDsRequest) returns (ListAdResponse) {}
+  rpc GetOnlyPublished(AdIDsRequest) returns (AdsResponse) {}
   rpc Delete(DeleteAdRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -54,7 +54,7 @@ message AdIDsRequest {
   repeated int64 id = 1;
 }
 
-message ListAdResponse {
+message AdsResponse {
   repeated AdResponse list = 1;
 }
 

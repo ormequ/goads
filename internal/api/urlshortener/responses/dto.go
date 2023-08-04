@@ -51,7 +51,7 @@ func LinkToResponse(l *proto.LinkResponse) Link {
 	}
 }
 
-func LinksListToResponse(l *proto.LinksListResponse) []Link {
+func LinksToResponse(l *proto.LinksResponse) []Link {
 	if l == nil {
 		return nil
 	}
@@ -69,9 +69,9 @@ func RedirectSuccess(r *proto.RedirectResponse) gin.H {
 	}
 }
 
-func LinksListSuccess(l *proto.LinksListResponse) gin.H {
+func LinksSuccess(l *proto.LinksResponse) gin.H {
 	return gin.H{
-		"data":  LinksListToResponse(l),
+		"data":  LinksToResponse(l),
 		"error": nil,
 	}
 }

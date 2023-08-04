@@ -36,9 +36,9 @@ type AdServiceClient interface {
 	Create(ctx context.Context, in *CreateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	ChangeStatus(ctx context.Context, in *ChangeAdStatusRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	Update(ctx context.Context, in *UpdateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
-	Filter(ctx context.Context, in *FilterAdsRequest, opts ...grpc.CallOption) (*ListAdResponse, error)
+	Filter(ctx context.Context, in *FilterAdsRequest, opts ...grpc.CallOption) (*AdsResponse, error)
 	GetByID(ctx context.Context, in *GetAdByIDRequest, opts ...grpc.CallOption) (*AdResponse, error)
-	GetOnlyPublished(ctx context.Context, in *AdIDsRequest, opts ...grpc.CallOption) (*ListAdResponse, error)
+	GetOnlyPublished(ctx context.Context, in *AdIDsRequest, opts ...grpc.CallOption) (*AdsResponse, error)
 	Delete(ctx context.Context, in *DeleteAdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -77,8 +77,8 @@ func (c *adServiceClient) Update(ctx context.Context, in *UpdateAdRequest, opts 
 	return out, nil
 }
 
-func (c *adServiceClient) Filter(ctx context.Context, in *FilterAdsRequest, opts ...grpc.CallOption) (*ListAdResponse, error) {
-	out := new(ListAdResponse)
+func (c *adServiceClient) Filter(ctx context.Context, in *FilterAdsRequest, opts ...grpc.CallOption) (*AdsResponse, error) {
+	out := new(AdsResponse)
 	err := c.cc.Invoke(ctx, AdService_Filter_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -95,8 +95,8 @@ func (c *adServiceClient) GetByID(ctx context.Context, in *GetAdByIDRequest, opt
 	return out, nil
 }
 
-func (c *adServiceClient) GetOnlyPublished(ctx context.Context, in *AdIDsRequest, opts ...grpc.CallOption) (*ListAdResponse, error) {
-	out := new(ListAdResponse)
+func (c *adServiceClient) GetOnlyPublished(ctx context.Context, in *AdIDsRequest, opts ...grpc.CallOption) (*AdsResponse, error) {
+	out := new(AdsResponse)
 	err := c.cc.Invoke(ctx, AdService_GetOnlyPublished_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -120,9 +120,9 @@ type AdServiceServer interface {
 	Create(context.Context, *CreateAdRequest) (*AdResponse, error)
 	ChangeStatus(context.Context, *ChangeAdStatusRequest) (*AdResponse, error)
 	Update(context.Context, *UpdateAdRequest) (*AdResponse, error)
-	Filter(context.Context, *FilterAdsRequest) (*ListAdResponse, error)
+	Filter(context.Context, *FilterAdsRequest) (*AdsResponse, error)
 	GetByID(context.Context, *GetAdByIDRequest) (*AdResponse, error)
-	GetOnlyPublished(context.Context, *AdIDsRequest) (*ListAdResponse, error)
+	GetOnlyPublished(context.Context, *AdIDsRequest) (*AdsResponse, error)
 	Delete(context.Context, *DeleteAdRequest) (*emptypb.Empty, error)
 }
 
@@ -139,13 +139,13 @@ func (UnimplementedAdServiceServer) ChangeStatus(context.Context, *ChangeAdStatu
 func (UnimplementedAdServiceServer) Update(context.Context, *UpdateAdRequest) (*AdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedAdServiceServer) Filter(context.Context, *FilterAdsRequest) (*ListAdResponse, error) {
+func (UnimplementedAdServiceServer) Filter(context.Context, *FilterAdsRequest) (*AdsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Filter not implemented")
 }
 func (UnimplementedAdServiceServer) GetByID(context.Context, *GetAdByIDRequest) (*AdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByID not implemented")
 }
-func (UnimplementedAdServiceServer) GetOnlyPublished(context.Context, *AdIDsRequest) (*ListAdResponse, error) {
+func (UnimplementedAdServiceServer) GetOnlyPublished(context.Context, *AdIDsRequest) (*AdsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOnlyPublished not implemented")
 }
 func (UnimplementedAdServiceServer) Delete(context.Context, *DeleteAdRequest) (*emptypb.Empty, error) {

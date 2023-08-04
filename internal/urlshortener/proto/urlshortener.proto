@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 service ShortenerService {
   rpc Create(CreateRequest) returns (LinkResponse) {}
   rpc GetByID(GetByIDRequest) returns (LinkResponse) {}
-  rpc GetByAuthor(GetByAuthorRequest) returns (LinksListResponse) {}
+  rpc GetByAuthor(GetByAuthorRequest) returns (LinksResponse) {}
   rpc GetByAlias(GetByAliasRequest) returns (LinkResponse) {}
   rpc GetRedirect(GetByAliasRequest) returns (RedirectResponse) {}
   rpc UpdateAlias(UpdateAliasRequest) returns (LinkResponse) {}
@@ -24,7 +24,7 @@ message LinkResponse {
   repeated int64 ads = 5;
 }
 
-message LinksListResponse {
+message LinksResponse {
   repeated LinkResponse list = 1;
 }
 

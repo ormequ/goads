@@ -37,7 +37,7 @@ const (
 type ShortenerServiceClient interface {
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*LinkResponse, error)
 	GetByID(ctx context.Context, in *GetByIDRequest, opts ...grpc.CallOption) (*LinkResponse, error)
-	GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*LinksListResponse, error)
+	GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*LinksResponse, error)
 	GetByAlias(ctx context.Context, in *GetByAliasRequest, opts ...grpc.CallOption) (*LinkResponse, error)
 	GetRedirect(ctx context.Context, in *GetByAliasRequest, opts ...grpc.CallOption) (*RedirectResponse, error)
 	UpdateAlias(ctx context.Context, in *UpdateAliasRequest, opts ...grpc.CallOption) (*LinkResponse, error)
@@ -72,8 +72,8 @@ func (c *shortenerServiceClient) GetByID(ctx context.Context, in *GetByIDRequest
 	return out, nil
 }
 
-func (c *shortenerServiceClient) GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*LinksListResponse, error) {
-	out := new(LinksListResponse)
+func (c *shortenerServiceClient) GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*LinksResponse, error) {
+	out := new(LinksResponse)
 	err := c.cc.Invoke(ctx, ShortenerService_GetByAuthor_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (c *shortenerServiceClient) Delete(ctx context.Context, in *DeleteRequest, 
 type ShortenerServiceServer interface {
 	Create(context.Context, *CreateRequest) (*LinkResponse, error)
 	GetByID(context.Context, *GetByIDRequest) (*LinkResponse, error)
-	GetByAuthor(context.Context, *GetByAuthorRequest) (*LinksListResponse, error)
+	GetByAuthor(context.Context, *GetByAuthorRequest) (*LinksResponse, error)
 	GetByAlias(context.Context, *GetByAliasRequest) (*LinkResponse, error)
 	GetRedirect(context.Context, *GetByAliasRequest) (*RedirectResponse, error)
 	UpdateAlias(context.Context, *UpdateAliasRequest) (*LinkResponse, error)
@@ -160,7 +160,7 @@ func (UnimplementedShortenerServiceServer) Create(context.Context, *CreateReques
 func (UnimplementedShortenerServiceServer) GetByID(context.Context, *GetByIDRequest) (*LinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByID not implemented")
 }
-func (UnimplementedShortenerServiceServer) GetByAuthor(context.Context, *GetByAuthorRequest) (*LinksListResponse, error) {
+func (UnimplementedShortenerServiceServer) GetByAuthor(context.Context, *GetByAuthorRequest) (*LinksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByAuthor not implemented")
 }
 func (UnimplementedShortenerServiceServer) GetByAlias(context.Context, *GetByAliasRequest) (*LinkResponse, error) {
