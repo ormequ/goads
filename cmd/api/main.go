@@ -19,7 +19,7 @@ import (
 
 type Config struct {
 	Env              string `env:"ENV" env-default:"local"`
-	HTTPAddress      string `env:"HTTP_ADDRESS" env-default:":80"`
+	HTTPAddress      string `env:"HTTP_ADDRESS" env-default:":8888"`
 	URLShortenerPath string `env:"URL_SHORTENER_PATH" env-required:"true"`
 	AuthPath         string `env:"AUTH_PATH" env-required:"true"`
 	AdsPath          string `env:"ADS_PATH" env-required:"true"`
