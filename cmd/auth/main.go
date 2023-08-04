@@ -24,7 +24,7 @@ type Config struct {
 	PublicKey    string `env:"AUTH_PUBLIC_KEY" env-required:"true"`
 	Expires      int    `env:"AUTH_EXPIRES_HOURS" env-default:"24"`
 	PasswordCost int    `env:"PASSWORD_COST" env-default:"10"`
-	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8081"`
+	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8888"`
 	PostgresConn string `env:"POSTGRES_CONN" env-required:"true"`
 }
 

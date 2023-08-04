@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	Env          string `env:"ENV" env-default:"local"`
-	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":18081"`
+	GRPCAddress  string `env:"GRPC_ADDRESS" env-default:":8888"`
 	PostgresConn string `env:"POSTGRES_CONN" env-required:"true"`
 }
 
