@@ -138,6 +138,7 @@ func (r Repo) GetByAuthor(ctx context.Context, authorID int64) ([]links.Link, er
 	const op = "pgrepo.GetByAuthor"
 
 	rows, err := r.db.Query(ctx, query, authorID)
+	defer rows.Close()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrNotFound, app.ServiceName, op).

@@ -71,6 +71,7 @@ func (r Repo) GetOnlyPublished(ctx context.Context, ids []int64) (res []ads.Ad, 
 	}()
 
 	rows, err := r.db.Query(ctx, query, ids)
+	defer rows.Close()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrAdNotFound, app.ServiceName, op).WithDetails(err.Error())
@@ -131,6 +132,7 @@ func (r Repo) GetFiltered(ctx context.Context, filter app.Filter) ([]ads.Ad, err
 	}
 	query += "title LIKE '%' || $1 || '%'"
 	rows, err := r.db.Query(ctx, query, filter.Title)
+	defer rows.Close()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = errwrap.New(app.ErrAdNotFound, app.ServiceName, op).WithDetails(err.Error())
